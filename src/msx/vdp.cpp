@@ -330,6 +330,10 @@ Vdp::_StartCommand()
 	int tx = (arg & 0x04) ? -1 : 1;
 	int ty = (arg & 0x08) ? -1 : 1;
 	uint8_t clr = fReg[44];
+	if (onCommand) {
+		Command c = { cmd, op, sx, sy, dx, dy, nx, ny, arg, clr };
+		onCommand(c);
+	}
 	if (nx == 0)
 		nx = 512;
 	if (ny == 0)

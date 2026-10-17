@@ -164,6 +164,8 @@ void
 Machine::Out(uint16_t port, uint8_t value)
 {
 	port &= 0xff;
+	if (onPortOut)
+		onPortOut(port, value);
 	if (port >= 0x98 && port <= 0x9b)
 		fVdp.WritePort(port, value);
 	else if (port == 0xa0)

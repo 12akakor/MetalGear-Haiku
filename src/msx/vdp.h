@@ -13,6 +13,7 @@
 #define MG_VDP_H
 
 #include <stdint.h>
+#include <functional>
 
 
 class Vdp {
@@ -59,6 +60,9 @@ public:
 
 	/* Statistics for tests. */
 			unsigned		commandCount;
+	/* Test hook, called before a command runs. */
+	struct Command { int cmd, op, sx, sy, dx, dy, nx, ny, arg, clr; };
+			std::function<void(const Command&)> onCommand;
 
 private:
 			void			_StartCommand();

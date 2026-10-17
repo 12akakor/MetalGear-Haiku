@@ -70,6 +70,7 @@ public:
 	   register write (BIOS WRTPSG or port #A1). */
 			std::function<void()>	onStep;
 			std::function<void(int, uint8_t)>	onPsgWrite;
+			std::function<void(int, uint8_t)>	onPortOut;
 
 private:
 			void			_Bios_CHGMOD(Z80Regs& r);
