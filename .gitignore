@@ -1,0 +1,7 @@
+build/
+*.o
+*.rom
+*.lst
+*.sym
+obj/
+out/
