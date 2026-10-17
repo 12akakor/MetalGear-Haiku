@@ -40,6 +40,7 @@ init_tables()
 Z80::Z80(Z80Bus* bus)
 	:
 	eiPending(false),
+	m1Wait(0),
 	fBus(bus)
 {
 	if (!sTablesReady)
@@ -322,11 +323,11 @@ Z80::Interrupt()
 	if (r.im == 2) {
 		r.pc = _Read16((uint16_t)((r.i << 8) | 0xff));
 		r.wz = r.pc;
-		return 19;
+		return 19 + 2 * m1Wait;
 	}
 	r.pc = 0x38;
 	r.wz = r.pc;
-	return 13;
+	return 13 + 2 * m1Wait;
 }
 
 
@@ -336,8 +337,19 @@ Z80::Step()
 	eiPending = false;
 	if (r.halted) {
 		inc_r(r);
-		return 4;
+		return 4 + m1Wait;
 	}
+	uint8_t r0 = r.r;
+	int cycles = _StepInner();
+	if (m1Wait)
+		cycles += m1Wait * ((r.r - r0) & 0x7f);
+	return cycles;
+}
+
+
+int
+Z80::_StepInner()
+{
 
 	int prefix = 0;
 	int cycles = 0;

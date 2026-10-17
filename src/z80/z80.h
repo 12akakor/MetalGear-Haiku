@@ -68,6 +68,9 @@ public:
 	/* Set after EI: interrupts are not accepted before the next
 	   instruction. */
 			bool			eiPending;
+	/* Extra T-states per M1 cycle (opcode fetch). The MSX inserts one
+	   wait state in every M1 cycle. */
+			int				m1Wait;
 
 private:
 			uint8_t			_Fetch();
@@ -83,6 +86,7 @@ private:
 			uint16_t&		_Reg16(int index, int prefix);
 			uint16_t		_IndexAddress(int prefix);
 
+			int				_StepInner();
 			int				_ExecMain(uint8_t op, int prefix);
 			int				_ExecCB(int prefix);
 			int				_ExecED();
