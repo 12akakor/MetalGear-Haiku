@@ -18,6 +18,7 @@
 #include "vdp.h"
 
 #include <stdint.h>
+#include <functional>
 #include <vector>
 
 
@@ -45,6 +46,8 @@ public:
 			Vdp&			GetVdp() { return fVdp; }
 			Psg&			GetPsg() { return fPsg; }
 			Z80&			Cpu() { return fCpu; }
+	/* One instruction (or one emulated BIOS call), without interrupts. */
+			int				StepInstruction();
 			uint8_t*		Ram() { return fRam; }
 			uint64_t		Frames() const { return fFrames; }
 			uint8_t			Bank(int slot) const { return fBank[slot]; }
@@ -63,6 +66,10 @@ public:
 			unsigned		biosCalls[0x200];
 	/* Debug: print this many executed PCs. */
 			long			traceLeft = 0;
+	/* Test hooks: called before every instruction, and for every PSG
+	   register write (BIOS WRTPSG or port #A1). */
+			std::function<void()>	onStep;
+			std::function<void(int, uint8_t)>	onPsgWrite;
 
 private:
 			void			_Bios_CHGMOD(Z80Regs& r);

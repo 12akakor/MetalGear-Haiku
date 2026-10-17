@@ -168,8 +168,11 @@ Machine::Out(uint16_t port, uint8_t value)
 		fVdp.WritePort(port, value);
 	else if (port == 0xa0)
 		fPsgLatch = value & 0x0f;
-	else if (port == 0xa1)
+	else if (port == 0xa1) {
+		if (onPsgWrite)
+			onPsgWrite(fPsgLatch, value);
 		fPsg.Write(fPsgLatch, value);
+	}
 }
 
 
@@ -234,6 +237,8 @@ Machine::HandleBios(Z80Regs& r, int* cycles)
 			r.iff1 = r.iff2 = true;
 			break;
 		case kWRTPSG:
+			if (onPsgWrite)
+				onPsgWrite(r.a & 0x0f, r.e);
 			fPsg.Write(r.a, r.e);
 			fPsgLatch = r.a & 0x0f;
 			r.iff1 = r.iff2 = true;
@@ -276,6 +281,18 @@ Machine::HandleBios(Z80Regs& r, int* cycles)
 }
 
 
+int
+Machine::StepInstruction()
+{
+	int c = 0;
+	if (fCpu.r.pc < 0x0200 && HandleBios(fCpu.r, &c)) {
+		fCpu.eiPending = false;
+		return c;
+	}
+	return fCpu.Step();
+}
+
+
 void
 Machine::RunFrame()
 {
@@ -297,6 +314,8 @@ Machine::RunFrame()
 				}
 			}
 			int c = 0;
+			if (onStep)
+				onStep();
 			if (traceLeft > 0) {
 				traceLeft--;
 				fprintf(stderr, "%04X A=%02X F=%02X BC=%04X DE=%04X HL=%04X SP=%04X\n",
