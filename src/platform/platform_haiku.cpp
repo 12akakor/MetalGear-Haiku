@@ -396,6 +396,25 @@ main(int argc, char** argv)
 }
 
 
+const char*
+plat_app_dir(void)
+{
+	static char dir[B_PATH_NAME_LENGTH] = "";
+	if (dir[0] == '\0') {
+		app_info info;
+		BPath path;
+		if (be_app != NULL && be_app->GetAppInfo(&info) == B_OK) {
+			BEntry entry(&info.ref);
+			if (entry.GetPath(&path) == B_OK && path.GetParent(&path) == B_OK)
+				snprintf(dir, sizeof(dir), "%s", path.Path());
+		}
+		if (dir[0] == '\0')
+			snprintf(dir, sizeof(dir), ".");
+	}
+	return dir;
+}
+
+
 void
 plat_alert(const char* title, const char* text)
 {

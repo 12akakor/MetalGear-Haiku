@@ -56,9 +56,17 @@ bit for bit.
     cp MetalGear.rom ~/config/settings/MetalGear/
     ./MetalGear
 
-Optional: put a General MIDI SoundFont (`.sf2`, for example FluidR3_GM.sf2)
-in the same folder for the enhanced music; without it the original sound is
-used. Instruments per music are in `music.cfg` there (written on first run).
+The enhanced music uses `data/MetalGear-FluidR3.sf2` (20 MB, included): the
+instruments and drums of the Fluid R3 General MIDI SoundFont (MIT licence)
+that the game uses. The instruments per music are in `music.cfg` in the
+settings folder (written on first run). To choose other instruments there,
+put the complete FluidR3_GM.sf2 (or any General MIDI SoundFont) in the
+settings folder; it is then used instead. Without any SoundFont the
+original sound plays.
+
+Make a subset of another SoundFont with:
+
+    tools/sf2/sf2_subset.py FluidR3_GM.sf2 out.sf2 0:61,0:33,128:0 -drumkeys 36,38
 
 Keys: arrows, space (fire), M or N (second button), F1-F5 and Return as on
 the MSX. Port keys (as in the Maze of Galious port where the game allows;

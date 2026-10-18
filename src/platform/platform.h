@@ -123,6 +123,10 @@ const char* plat_key_name(MOGKey key);
    the current directory before game_main() runs. */
 const char* plat_data_dir(void);
 
+/* Directory of the program itself (bundled data lives in its "data"
+   subdirectory). */
+const char* plat_app_dir(void);
+
 /* Writable directory for MoG.cfg and other user files (created if needed).
    Both can be overridden with the environment variables MOG_DATA and
    MOG_SETTINGS (used by the tests). */

@@ -145,10 +145,15 @@ load_rom(int argc, char** argv, std::string* message)
 }
 
 
+/* A SoundFont of the player's own in the settings folder comes first,
+   then the one that comes with the game (data/MetalGear-FluidR3.sf2),
+   then the system's. */
 std::string
 find_soundfont()
 {
-	std::vector<std::string> dirs = { plat_settings_dir(),
+	std::string app = plat_app_dir();
+	std::vector<std::string> dirs = { plat_settings_dir(), app + "/data",
+		app + "/../data", app + "/../share/MetalGear",
 		"/boot/home/config/non-packaged/data/synth",
 		"/boot/system/non-packaged/data/synth", "/boot/system/data/synth",
 		"/boot/system/data/soundfonts" };
