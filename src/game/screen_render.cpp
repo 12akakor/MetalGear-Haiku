@@ -105,16 +105,26 @@ render_sprites(const Screen& s, int line, uint8_t* colors, bool* set)
 void
 screen_render(const Screen& s, uint32_t* out)
 {
+	static uint8_t indexed[kScreenWidth * kScreenHeight];
+	screen_render_indexed(s, indexed);
 	uint32_t palette[16];
 	for (int i = 0; i < 16; i++)
 		palette[i] = screen_rgb(s, i);
-	uint32_t backdrop = palette[s.Register(7) & 0x0f];
+	for (int i = 0; i < kScreenWidth * kScreenHeight; i++)
+		out[i] = palette[indexed[i] & 15];
+}
+
+
+void
+screen_render_indexed(const Screen& s, uint8_t* out)
+{
+	uint8_t backdrop = (uint8_t)(s.Register(7) & 0x0f);
 	int lines = (s.Register(9) & 0x80) ? 212 : 192;
 	bool enabled = (s.Register(1) & 0x40) != 0;
 	uint32_t page = (uint32_t)((s.Register(2) & 0x60) << 10);
 	bool tp = (s.Register(8) & 0x20) != 0;
 	for (int line = 0; line < kScreenHeight; line++) {
-		uint32_t* row = out + line * kScreenWidth;
+		uint8_t* row = out + line * kScreenWidth;
 		if (line >= lines || !enabled) {
 			for (int x = 0; x < kScreenWidth; x++)
 				row[x] = backdrop;
@@ -134,7 +144,7 @@ screen_render(const Screen& s, uint32_t* out)
 				uint8_t b = src[x >> 1];
 				c = (x & 1) ? (b & 0x0f) : (uint8_t)(b >> 4);
 			}
-			row[x] = (c == 0 && !tp) ? backdrop : palette[c];
+			row[x] = (c == 0 && !tp) ? backdrop : c;
 		}
 	}
 }

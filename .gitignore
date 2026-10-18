@@ -12,3 +12,10 @@ out/
 *.zip
 export/
 hd/
+MetalGear
+mgnative
+mg-romcheck
+mg-hdtool
+sound_diff
+room_diff
+game_diff

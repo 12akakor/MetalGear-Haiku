@@ -45,8 +45,24 @@ bit for bit.
 | Sound driver in C++, bit exact | done |
 | SoundFont music and classic sound | done (preview tool) |
 | Graphics export and HD tile generator | done (tools) |
-| Game logic in native C++ | in progress |
-| Haiku window, input, settings | planned |
+| Start up, Konami logo, Metal Gear logo, menu | done, tick for tick equal |
+| Demo and game logic in native C++ | in progress |
+| Haiku window, input, sound output | first version (from the Maze of Galious port) |
+
+## Building and running on Haiku
+
+    make
+    mkdir -p ~/config/settings/MetalGear
+    cp MetalGear.rom ~/config/settings/MetalGear/
+    ./MetalGear
+
+Optional: put a General MIDI SoundFont (`.sf2`, for example FluidR3_GM.sf2)
+in the same folder for the enhanced music; without it the original sound is
+used. Instruments per music are in `music.cfg` there (written on first run).
+
+Keys: arrows, space (fire), M or N (second button), F1-F5 and Return as on
+the MSX. F8 music classic/enhanced, F9 timing, F10 filter, F11 full screen,
+F12 screenshot.
 
 ## Building the ROM (needed for everything)
 
