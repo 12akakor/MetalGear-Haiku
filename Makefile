@@ -15,8 +15,11 @@ PLATFORM = src/platform/PlatformHaiku.cpp src/platform/PlatformCommon.cpp \
 	src/platform/VideoScaler.cpp src/platform/KeyNames.cpp
 REF = src/msx/Machine.cpp src/msx/Psg.cpp src/msx/Vdp.cpp src/z80/Z80.cpp
 
-MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^ -lbe -lmedia -ltranslation -ldevice
+MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp src/MetalGear.rdef
+	$(CXX) $(CXXFLAGS) -o $@ $(filter %.cpp,$^) -lbe -lmedia -ltranslation -ldevice
+	rc -o MetalGear.rsrc src/MetalGear.rdef
+	xres -o $@ MetalGear.rsrc
+	mimeset -f $@
 
 tools: mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff
 
@@ -38,6 +41,6 @@ save_diff: tests/save/save_diff.cpp $(GAME) $(REF)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f MetalGear mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff
+	rm -f MetalGear MetalGear.rsrc mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff
 
 .PHONY: tools clean

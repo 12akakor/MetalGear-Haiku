@@ -88,6 +88,14 @@ Metal Gear uses F1-F5 itself):
     cd MetalGear
     sjasm MetalGear.asm MetalGear.rom      # Sjasm 0.39
 
+## Icon
+
+`data/icon` holds the application icon, an original design (an olive drab
+gear with a radar screen): `MetalGear.hvif` (Haiku vector icon, also in
+`src/MetalGear.rdef`, attached by `make`) and PNG versions from 16 to 512
+pixels. `tools/icon/make_icon.py data/icon src/MetalGear.rdef` rebuilds
+them; the PNGs are drawn from the HVIF data the way Haiku draws icons.
+
 ## Saved games
 
 The original saves to cassette. The port writes the same bytes to a tape
