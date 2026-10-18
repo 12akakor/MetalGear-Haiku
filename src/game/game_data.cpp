@@ -2,6 +2,8 @@
 #include "game_ram.h"
 
 #include <stdio.h>
+#include <string.h>
+#include <algorithm>
 
 uint8_t g_ram[0x4000];
 
@@ -22,6 +24,43 @@ game_crc32(const uint8_t* data, size_t size)
 }
 
 
+void
+game_sha1(const uint8_t* data, size_t size, char out[41])
+{
+	uint32_t h[5] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0 };
+	std::vector<uint8_t> m(data, data + size);
+	uint64_t bits = (uint64_t)size * 8;
+	m.push_back(0x80);
+	while (m.size() % 64 != 56)
+		m.push_back(0);
+	for (int i = 7; i >= 0; i--)
+		m.push_back((uint8_t)(bits >> (i * 8)));
+	for (size_t chunk = 0; chunk < m.size(); chunk += 64) {
+		uint32_t w[80];
+		for (int i = 0; i < 16; i++)
+			w[i] = (uint32_t)m[chunk + i * 4] << 24 | (uint32_t)m[chunk + i * 4 + 1] << 16
+				| (uint32_t)m[chunk + i * 4 + 2] << 8 | m[chunk + i * 4 + 3];
+		for (int i = 16; i < 80; i++) {
+			uint32_t v = w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16];
+			w[i] = (v << 1) | (v >> 31);
+		}
+		uint32_t a = h[0], b = h[1], c = h[2], d = h[3], e = h[4];
+		for (int i = 0; i < 80; i++) {
+			uint32_t f, k;
+			if (i < 20) { f = (b & c) | (~b & d); k = 0x5a827999; }
+			else if (i < 40) { f = b ^ c ^ d; k = 0x6ed9eba1; }
+			else if (i < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8f1bbcdc; }
+			else { f = b ^ c ^ d; k = 0xca62c1d6; }
+			uint32_t t = ((a << 5) | (a >> 27)) + f + e + k + w[i];
+			e = d; d = c; c = (b << 30) | (b >> 2); b = a; a = t;
+		}
+		h[0] += a; h[1] += b; h[2] += c; h[3] += d; h[4] += e;
+	}
+	for (int i = 0; i < 5; i++)
+		snprintf(out + i * 8, 9, "%08x", h[i]);
+}
+
+
 const char*
 game_rom_version_name(RomVersion version)
 {
@@ -36,31 +75,129 @@ game_rom_version_name(RomVersion version)
 }
 
 
-bool
-game_data_set(const std::vector<uint8_t>& rom, std::string* error)
+namespace {
+
+/* CRC32 of every 8 KB bank of the two reference dumps (built from the
+   disassembly, the same as the GoodMSX / openMSX database dumps:
+   SHA1 b656bd19... English, a52021f1... Japanese). Only checksums, no game
+   data. */
+const uint32_t kBankCrc[2][16] = {
+	{ 0x219492de, 0x625a1f80, 0x8022e511, 0xf6470fee, 0xf5d585ab, 0xbe32e2f0,
+	  0xbe8e48ed, 0x159a32f9, 0x4f8d7d8d, 0x19e3d6dd, 0xd5c3c2cd, 0xdc41baf3,
+	  0xaf72aeba, 0x0f1f5180, 0xe641647c, 0x381d34fe },
+	{ 0x9a9dc691, 0x872903d0, 0x98bba33d, 0xa60e0c42, 0xf5d585ab, 0xbe32e2f0,
+	  0xbe953df8, 0x159a32f9, 0x4f8d7d8d, 0x86cb95a1, 0xd5c3c2cd, 0xdc41baf3,
+	  0xbc720a97, 0x0f1f5180, 0xe641647c, 0x2b0977dd }
+};
+
+/* Accept a modified ROM when at least this many banks equal a reference. */
+const int kMinimumBanks = 12;
+
+RomInfo sInfo;
+
+}	// namespace
+
+
+RomInfo
+game_rom_identify(const std::vector<uint8_t>& image)
 {
-	if (rom.size() != 0x20000) {
-		if (error != NULL)
-			*error = "the ROM must be 131072 bytes (128 KB)";
-		return false;
+	RomInfo info;
+	info.originalSize = image.size();
+	std::vector<uint8_t> rom = image;
+	/* Overdumps: 256 KB or more with the 128 KB repeated, or padding. */
+	while (rom.size() > 0x20000 && rom.size() % 0x20000 == 0) {
+		size_t half = rom.size() / 2;
+		if (std::equal(rom.begin(), rom.begin() + (long)half, rom.begin() + (long)half))
+			rom.resize(half);
+		else
+			break;
 	}
-	uint32_t crc = game_crc32(rom.data(), rom.size());
-	RomVersion version = kRomUnknown;
-	if (crc == 0xe85c5731)
-		version = kRomEnglish;
-	else if (crc == 0xfafe1303)
-		version = kRomJapanese;
-	if (version == kRomUnknown) {
+	if (rom.size() > 0x20000) {
+		bool padding = true;
+		for (size_t i = 0x20000; i < rom.size() && padding; i++)
+			padding = rom[i] == 0xff || rom[i] == 0x00;
+		if (padding) {
+			rom.resize(0x20000);
+			info.note = "extra padding after 128 KB ignored";
+		}
+	}
+	if (!rom.empty()) {
+		info.crc32 = game_crc32(rom.data(), rom.size());
+		game_sha1(rom.data(), rom.size(), info.sha1);
+	}
+	if (rom.size() != 0x20000) {
+		info.note = "the ROM must be 128 KB (131072 bytes)";
+		return info;
+	}
+	int best = -1, bestCount = -1;
+	uint32_t bestMask = 0;
+	for (int v = 0; v < 2; v++) {
+		int count = 0;
+		uint32_t mask = 0;
+		for (int b = 0; b < 16; b++) {
+			if (game_crc32(rom.data() + b * 0x2000, 0x2000) == kBankCrc[v][b])
+				count++;
+			else
+				mask |= 1u << b;
+		}
+		if (count > bestCount) {
+			bestCount = count;
+			best = v;
+			bestMask = mask;
+		}
+	}
+	info.matchingBanks = bestCount;
+	info.differingBanks = bestMask;
+	if (bestCount < kMinimumBanks) {
+		info.note = "not a known version of Metal Gear (MSX2)";
+		return info;
+	}
+	info.version = best == 0 ? kRomEnglish : kRomJapanese;
+	info.exact = bestCount == 16;
+	if (!info.exact) {
+		char buf[200];
+		snprintf(buf, sizeof(buf), "modified %s ROM (%d of 16 banks equal, others differ:",
+			game_rom_version_name(info.version), bestCount);
+		std::string note = buf;
+		for (int b = 0; b < 16; b++) {
+			if (bestMask & (1u << b)) {
+				snprintf(buf, sizeof(buf), " %d", b);
+				note += buf;
+			}
+		}
+		note += "); it may work, texts or graphics can differ";
+		info.note = note;
+	}
+	return info;
+}
+
+
+const RomInfo&
+game_rom_info()
+{
+	return sInfo;
+}
+
+
+bool
+game_data_set(const std::vector<uint8_t>& image, std::string* error)
+{
+	RomInfo info = game_rom_identify(image);
+	if (info.version == kRomUnknown) {
 		if (error != NULL) {
-			char buf[160];
-			snprintf(buf, sizeof(buf), "unknown ROM version (CRC32 %08X); supported:"
-				" English E85C5731, Japanese FAFE1303", crc);
+			char buf[300];
+			snprintf(buf, sizeof(buf), "%s (CRC32 %08X, SHA1 %s); supported: English"
+				" E85C5731, Japanese FAFE1303 and close variants of them",
+				info.note.c_str(), info.crc32, info.sha1);
 			*error = buf;
 		}
 		return false;
 	}
+	/* For overdumps and padding the first 128 KB are the game. */
+	std::vector<uint8_t> rom(image.begin(), image.begin() + 0x20000);
 	sRom = rom;
-	sVersion = version;
+	sVersion = info.version;
+	sInfo = info;
 	return true;
 }
 
@@ -77,7 +214,7 @@ game_data_load(const char* romPath, std::string* error)
 	std::vector<uint8_t> rom;
 	uint8_t buf[65536];
 	size_t n;
-	while ((n = fread(buf, 1, sizeof(buf), fp)) > 0 && rom.size() <= 0x20000)
+	while ((n = fread(buf, 1, sizeof(buf), fp)) > 0 && rom.size() <= 0x200000)
 		rom.insert(rom.end(), buf, buf + n);
 	fclose(fp);
 	return game_data_set(rom, error);

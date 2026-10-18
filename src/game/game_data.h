@@ -17,12 +17,29 @@ enum RomVersion {
 	kRomJapanese		/* CRC32 FAFE1303 */
 };
 
+/* How the loaded ROM was recognised. */
+struct RomInfo {
+	RomVersion	version = kRomUnknown;
+	bool		exact = false;		/* one of the two reference dumps */
+	uint32_t	crc32 = 0;
+	char		sha1[41] = "";
+	size_t		originalSize = 0;
+	int			matchingBanks = 0;	/* of 16, with the chosen version */
+	uint32_t	differingBanks = 0;	/* bit mask */
+	std::string	note;				/* remark for the player */
+};
+
+/* Identifies a ROM image (any size); does not load it. */
+RomInfo		game_rom_identify(const std::vector<uint8_t>& image);
+const RomInfo&	game_rom_info();
+
 /* Loads and checks the ROM; on failure 'error' says why. */
 bool		game_data_load(const char* romPath, std::string* error = NULL);
 bool		game_data_set(const std::vector<uint8_t>& rom, std::string* error = NULL);
 RomVersion	game_rom_version();
 const char*	game_rom_version_name(RomVersion version);
 uint32_t	game_crc32(const uint8_t* data, size_t size);
+void		game_sha1(const uint8_t* data, size_t size, char out[41]);
 
 /* Byte at 'address' (#4000-#BFFF) when 'bank' is mapped at that address. */
 uint8_t		game_data_byte(int bank, uint16_t address);

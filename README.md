@@ -7,8 +7,17 @@ RenkuOS on x86_64, with optional enhanced music and graphics.
 tools. The game itself is read at run time from a ROM you provide: build it
 yourself from the annotated disassembly by Manuel Pazos
 ([GuillianSeed/MetalGear](https://github.com/GuillianSeed/MetalGear)), or use
-a dump of a cartridge you own. Only the English version is supported (CRC32
-`E85C5731`).
+a dump of a cartridge you own.
+
+Supported: the English version (CRC32 `E85C5731`, SHA1 `b656bd19...`) and the
+Japanese version (CRC32 `FAFE1303`, SHA1 `a52021f1...`), the same dumps as in
+the openMSX software database. Overdumps (128 KB repeated) are accepted, and
+lightly modified versions (translations, small hacks) are accepted with a
+warning when at least 12 of the 16 banks equal one of the two. Check a ROM
+with `mg-romcheck`: it prints only checksums, so its output can be shared.
+
+    g++ -O2 -std=c++17 -o mg-romcheck tools/romcheck.cpp src/game/game_data.cpp src/game/rom_symbols.cpp
+    ./mg-romcheck MetalGear.rom
 
 Metal Gear is a trademark of Konami. This project is not affiliated with or
 endorsed by Konami.
