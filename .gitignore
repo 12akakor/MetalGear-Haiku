@@ -20,3 +20,6 @@ mg-hdtool
 sound_diff
 room_diff
 game_diff
+mg-tape
+save_diff
+*.cas

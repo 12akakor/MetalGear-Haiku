@@ -26,6 +26,7 @@
 #include "game/GameRam.h"
 #include "game/Input.h"
 #include "game/RamSymbols.h"
+#include "game/SaveLoad.h"
 #include "game/Screen.h"
 #include "game/ScreenRender.h"
 #include "platform/Platform.h"
@@ -285,6 +286,12 @@ GameMain(int argc, char** argv)
 	}
 	bool audioOpen = PlatAudioOpen(44100, AudioCallback, NULL);
 
+	// The cassette for saving and loading: a .CAS image, also usable in
+	// MSX emulators (and theirs here).
+	const std::string tapePath = std::string(PlatSettingsDir()) + "/MetalGear.cas";
+	if (gTape.Load(tapePath.c_str()))
+		printf("  tape: %s, %zu saves\n", tapePath.c_str(), ListTapeSaves(gTape).size());
+
 	Start();
 
 	static uint8_t picture[kScreenWidth * kScreenHeight];
@@ -300,6 +307,10 @@ GameMain(int argc, char** argv)
 			else if (event.type == PLAT_EV_KEYDOWN) {
 				if (event.key > 0 && event.key < MOGK_LAST)
 					sTapped[event.key] = true;
+				if (event.key == MOGK_BACKSPACE || event.key == MOGK_RETURN
+					|| event.key == MOGK_ESCAPE
+					|| (event.key >= MOGK_SPACE && event.key < 127))
+					QueueTypedChar(static_cast<uint8_t>(event.key));
 				if (event.key == MOGK_q && ((event.modifiers & PLAT_MOD_ALT) != 0)) {
 					quit = true;
 					continue;
@@ -339,6 +350,14 @@ GameMain(int argc, char** argv)
 			gUnported = NULL;
 			Ram(var::GameStatus) = 0;
 			Ram(var::GameSubstatus) = 0;
+		}
+		// The name block is written, the data block follows next tick.
+		bool halfSaved = Ram(var::SaveLoadMode) == 2 && Ram(var::SaveLoadStat) == 3;
+		if (gTape.IsModified() && !halfSaved) {
+			if (gTape.Save(tapePath.c_str()))
+				gTape.SetModified(false);
+			else
+				fprintf(stderr, "cannot write %s\n", tapePath.c_str());
 		}
 		samples.clear();
 		audio.Tick(samples, false);

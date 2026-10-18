@@ -46,6 +46,7 @@ bit for bit.
 | SoundFont music and classic sound | done (preview tool) |
 | Graphics export and HD tile generator | done (tools) |
 | Start up, Konami logo, Metal Gear logo, menu | done, tick for tick equal |
+| Save and load (tape, .CAS images) | done, tick for tick equal; reachable once the pause screen is rewritten |
 | Demo and game logic in native C++ | in progress |
 | Haiku window, input, sound output | first version (from the Maze of Galious port) |
 
@@ -87,6 +88,21 @@ Metal Gear uses F1-F5 itself):
     cd MetalGear
     sjasm MetalGear.asm MetalGear.rom      # Sjasm 0.39
 
+## Saved games
+
+The original saves to cassette. The port writes the same bytes to a tape
+image, `~/config/settings/MetalGear/MetalGear.cas`, in the .CAS format
+that MSX emulators (openMSX, blueMSX, fMSX) use. Saves are
+interchangeable: put a .CAS with Metal Gear saves from an emulator there
+under that name to load them in the port, or insert the port's file as a
+tape in an emulator and load it with F4 in the original. Each save holds
+its name (up to 6 letters or digits) and the game progress (#300 bytes).
+Saving under a name that is already on the tape replaces that save; `mg-tape
+file.cas` lists the saves on a tape.
+
+Disk saves made with third party disk patches are not supported (their
+format is unknown here); a sample file would be needed.
+
 ## Tools
 
     # music previews (needs a General MIDI SoundFont, e.g. FluidR3_GM.sf2)
@@ -102,6 +118,7 @@ Metal Gear uses F1-F5 itself):
     make tools          # tests and tools: sound_diff, room_diff, game_diff, mgnative, ...
     ./sound_diff MetalGear.rom
     ./game_diff MetalGear.rom 700
+    ./save_diff MetalGear.rom
 
 ## Coding style
 

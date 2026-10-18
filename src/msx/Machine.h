@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <vector>
 
+#include "../game/CasTape.h"
 #include "../z80/Z80.h"
 #include "Psg.h"
 #include "Vdp.h"
@@ -46,6 +47,11 @@ public:
 			void			SetKey(int row, int bit, bool down);
 	// Joystick port 1: bits 0..5 = up, down, left, right, A, B.
 			void			SetJoystick(uint8_t bits) { fJoystick = bits; }
+
+	// Tape for TAPION/TAPIN/TAPOON/TAPOUT (NULL: no cassette, errors), and
+	// the characters CHGET returns (empty: RETURN).
+			CasTape*		tape = NULL;
+			std::vector<uint8_t> typed;
 
 			Vdp&			GetVdp() { return fVdp; }
 			Psg&			GetPsg() { return fPsg; }

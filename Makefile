@@ -7,7 +7,8 @@ CXXFLAGS ?= -O2 -std=c++17 -Wall
 GAME = src/game/GameData.cpp src/game/Rom.cpp src/game/RomSymbols.cpp \
 	src/game/Screen.cpp src/game/ScreenRender.cpp src/game/GfxBasic.cpp \
 	src/game/RoomGfx.cpp src/game/SoundDriver.cpp src/game/Input.cpp \
-	src/game/GameMain.cpp src/game/Title.cpp
+	src/game/GameMain.cpp src/game/Title.cpp src/game/CasTape.cpp \
+	src/game/SaveLoad.cpp
 AUDIO = src/audio/GameAudio.cpp src/audio/MusicRenderer.cpp \
 	src/audio/Reverb.cpp src/audio/ToneSynth.cpp
 PLATFORM = src/platform/PlatformHaiku.cpp src/platform/PlatformCommon.cpp \
@@ -17,11 +18,13 @@ REF = src/msx/Machine.cpp src/msx/Psg.cpp src/msx/Vdp.cpp src/z80/Z80.cpp
 MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ -lbe -lmedia -ltranslation -ldevice
 
-tools: mgnative mg-romcheck mg-hdtool sound_diff room_diff game_diff
+tools: mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff
 
 mgnative: tools/mgnative.cpp $(GAME) $(AUDIO)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 mg-romcheck: tools/romcheck.cpp src/game/GameData.cpp src/game/RomSymbols.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
+mg-tape: tools/tapetool.cpp $(GAME)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 mg-hdtool: tools/hdtool.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
@@ -31,8 +34,10 @@ room_diff: tests/gfx/room_diff.cpp $(GAME) $(REF)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 game_diff: tests/game/game_diff.cpp $(GAME) $(REF)
 	$(CXX) $(CXXFLAGS) -o $@ $^
+save_diff: tests/save/save_diff.cpp $(GAME) $(REF)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f MetalGear mgnative mg-romcheck mg-hdtool sound_diff room_diff game_diff
+	rm -f MetalGear mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff
 
 .PHONY: tools clean

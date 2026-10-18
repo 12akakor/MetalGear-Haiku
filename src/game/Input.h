@@ -30,6 +30,16 @@ uint8_t		ReadControls();
 uint8_t		ReadFKeys();
 // StoreControls: hold at 'hold', newly pressed at hold-1; returns those.
 uint8_t		StoreControls(uint16_t hold, uint8_t value);
+// ReadKeyboard: rows 8..0 into PassKeysHold (pressed = 1) and the newly
+// pressed keys into PassKeysTrigger (KeyboardRow5 and so on).
+void		ReadKeyboard();
+
+// Typed characters (the BIOS keyboard buffer CHGET reads). The platform
+// layer queues them; CHGET returns false when there is none (the original
+// waits for one).
+void		QueueTypedChar(uint8_t c);
+void		ClearTypedChars();
+bool		CHGET(uint8_t* c);
 
 
 #endif	// MG_INPUT_H

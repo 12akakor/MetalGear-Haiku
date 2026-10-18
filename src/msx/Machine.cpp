@@ -269,17 +269,46 @@ Machine::HandleBios(Z80Regs& r, int* cycles)
 			fPsgLatch = r.a & 0x0f;
 			r.a = In(0xa2);
 			break;
-		case kCHGET:
-			r.a = 0x0d;
-			break;
 		case kTAPION:
 		case kTAPIN:
 		case kTAPOON:
 		case kTAPOUT:
-			r.f |= Z80_CF;	// no cassette: error
+		{
+			// Without a tape: error (carry), as the old stub did.
+			bool ok = false;
+			if (tape != NULL) {
+				if (pc == kTAPION)
+					ok = tape->InOn();
+				else if (pc == kTAPIN)
+					ok = tape->In(&r.a);
+				else if (pc == kTAPOON)
+					ok = tape->OutOn();
+				else
+					ok = tape->Out(r.a);
+			}
+			if (ok)
+				r.f &= static_cast<uint8_t>(~Z80_CF);
+			else
+				r.f |= Z80_CF;
+			r.iff1 = r.iff2 = false;	// the BIOS reads and writes the tape with DI
 			break;
+		}
 		case kTAPIOF:
+			if (tape != NULL)
+				tape->InOff();
+			r.iff1 = r.iff2 = true;
+			break;
 		case kTAPOOF:
+			if (tape != NULL)
+				tape->OutOff();
+			r.iff1 = r.iff2 = true;
+			break;
+		case kCHGET:
+			if (!typed.empty()) {
+				r.a = typed.front();
+				typed.erase(typed.begin());
+			} else
+				r.a = 0x0d;
 			break;
 		case kRSLREG:
 			r.a = 0x14;	// page 1 and 2: slot 1

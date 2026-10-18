@@ -7,11 +7,16 @@
 // Controls, rewritten from logic/controls.asm.
 #include "Input.h"
 
+#include "RamSymbols.h"
 #include "Rom.h"
+
+#include <deque>
 
 
 uint8_t gKeyMatrix[11] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 uint8_t gJoystick = 0x3f;
+
+static std::deque<uint8_t> sTyped;
 
 
 uint8_t
@@ -51,4 +56,45 @@ ReadFKeys()
 	a |= static_cast<uint8_t>((row7 & 3) << 3);
 	a |= static_cast<uint8_t>((row7 >> 2) & 0x20);
 	return a;
+}
+
+
+// logic/passwords.asm
+void
+ReadKeyboard()
+{
+	for (int i = 0; i < 9; i++) {
+		uint8_t value = static_cast<uint8_t>(~SNSMAT(8 - i));
+		uint16_t hold = static_cast<uint16_t>(var::PassKeysHold + i);
+		uint8_t old = Ram(hold);
+		Ram(hold) = value;
+		Ram(static_cast<uint16_t>(var::PassKeysTrigger + i))
+			= static_cast<uint8_t>((value ^ old) & value);
+	}
+}
+
+
+void
+QueueTypedChar(uint8_t c)
+{
+	if (sTyped.size() < 40)
+		sTyped.push_back(c);
+}
+
+
+void
+ClearTypedChars()
+{
+	sTyped.clear();
+}
+
+
+bool
+CHGET(uint8_t* c)
+{
+	if (sTyped.empty())
+		return false;
+	*c = sTyped.front();
+	sTyped.pop_front();
+	return true;
 }
