@@ -68,7 +68,7 @@ Metal Gear uses F1-F5 itself):
 |---|---|
 | F7 | Next filter (xBR, nearest, sharp) |
 | F8 | Show or hide the timing display |
-| F9 | Screenshot (PNG in the home folder) |
+| F9 or Print Screen | Screenshot (PNG in the home folder) |
 | F10 | Music: enhanced or original sound |
 | F11 | Full screen on or off |
 | F12 or Alt+Q | Quit |

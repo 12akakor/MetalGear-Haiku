@@ -6,7 +6,7 @@
  * Keys: arrows move, space fire, M or N second button (weapon), F1-F5 as
  * on the MSX (pause, weapons, equipment, ...), Return. Port functions (as
  * close to the Maze of Galious port as the game allows, it uses F1-F5
- * itself): F7 next filter, F8 timing display, F9 screenshot, F10 music
+ * itself): F7 next filter, F8 timing display, F9 or Print Screen screenshot, F10 music
  * classic/enhanced, F11 full screen, F12 or Alt+Q quit.
  */
 #include "audio/game_audio.h"
@@ -270,6 +270,7 @@ game_main(int argc, char** argv)
 						plat_toggle_stats();
 						break;
 					case MOGK_F9:
+					case MOGK_PRINT:
 						plat_save_screenshot();
 						break;
 					case MOGK_F10:
