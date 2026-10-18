@@ -5,3 +5,10 @@ build/
 *.sym
 obj/
 out/
+*.com
+*.sf2
+*.wav
+*.mp3
+*.zip
+export/
+hd/
