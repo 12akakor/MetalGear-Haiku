@@ -1,6 +1,6 @@
 /* Which routines of the original talk to the VDP, and how.
    vdp_profile <rom> <sym> <frames> [keys] */
-#include "../src/msx/machine.h"
+#include "../src/msx/Machine.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

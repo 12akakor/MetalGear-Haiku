@@ -8,10 +8,10 @@
  *
  *   game_diff <rom> <ticks> [key script: lines "tick row bit down"]
  */
-#include "../diff_machine.h"
-#include "../../src/game/game_main.h"
-#include "../../src/game/input.h"
-#include "../../src/game/rom.h"
+#include "../DiffMachine.h"
+#include "../../src/game/GameMain.h"
+#include "../../src/game/Input.h"
+#include "../../src/game/Rom.h"
 
 #include <stdlib.h>
 
@@ -34,7 +34,7 @@ main(int argc, char** argv)
 	}
 
 	/* Start: the reference runs from reset to the idle loop. */
-	memcpy(g_ram, dm.machine.Ram(), sizeof(g_ram));
+	memcpy(gRam, dm.machine.Ram(), sizeof(gRam));
 	Z80Regs& r = dm.machine.Cpu().r;
 	uint16_t idle = SYM(DummyLoop);
 	long guard = 0;
@@ -52,16 +52,16 @@ main(int argc, char** argv)
 		while (next < keys.size() && keys[next].tick == t) {
 			dm.machine.SetKey(keys[next].row, keys[next].bit, keys[next].down != 0);
 			if (keys[next].down)
-				g_keyMatrix[keys[next].row] &= (uint8_t)~(1 << keys[next].bit);
+				gKeyMatrix[keys[next].row] &= (uint8_t)~(1 << keys[next].bit);
 			else
-				g_keyMatrix[keys[next].row] |= (uint8_t)(1 << keys[next].bit);
+				gKeyMatrix[keys[next].row] |= (uint8_t)(1 << keys[next].bit);
 			next++;
 		}
 		uint8_t status = dm.machine.Ram()[0], sub = dm.machine.Ram()[1];
 		dm.Call(SYM(InterruptTick));
 		InterruptTick();
-		if (g_unported != NULL) {
-			printf("tick %ld: stopped, not rewritten yet: %s\n", t, g_unported);
+		if (gUnported != NULL) {
+			printf("tick %ld: stopped, not rewritten yet: %s\n", t, gUnported);
 			break;
 		}
 		snprintf(what, sizeof(what), "tick %ld (status %d,%d)", t, status, sub);

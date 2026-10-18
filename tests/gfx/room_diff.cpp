@@ -5,9 +5,9 @@
  *
  *   room_diff <rom>
  */
-#include "../diff_machine.h"
-#include "../../src/game/rom.h"
-#include "../../src/game/room_gfx.h"
+#include "../DiffMachine.h"
+#include "../../src/game/Rom.h"
+#include "../../src/game/RoomGfx.h"
 
 int
 main(int argc, char** argv)
@@ -26,9 +26,9 @@ main(int argc, char** argv)
 	for (int room = 0; room < 251; room++) {
 		/* Rooms that point at RoomUndefined are never entered; their data
 		   would come from the BIOS ROM. */
-		set_banks(13);
-		g_ram[var::BankIn60 - 0xc000] = 13;
-		bool undefined = rom16((uint16_t)(SYM(idxRooms) + room * 2)) == SYM(RoomUndefined);
+		SetBanks(13);
+		gRam[var::BankIn60 - 0xc000] = 13;
+		bool undefined = Rom16((uint16_t)(SYM(idxRooms) + room * 2)) == SYM(RoomUndefined);
 		if (undefined) {
 			skipped++;
 			continue;

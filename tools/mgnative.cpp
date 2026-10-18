@@ -4,12 +4,12 @@
  *   mgnative <rom> <ticks> [-shot n,n,...] [-every n] [-keys file] [-out dir]
  *            [-wav file] [-sf2 soundfont]
  */
-#include "../src/audio/game_audio.h"
-#include "../src/game/game_data.h"
-#include "../src/game/game_main.h"
-#include "../src/game/input.h"
-#include "../src/game/screen.h"
-#include "../src/game/screen_render.h"
+#include "../src/audio/GameAudio.h"
+#include "../src/game/GameData.h"
+#include "../src/game/GameMain.h"
+#include "../src/game/Input.h"
+#include "../src/game/Screen.h"
+#include "../src/game/ScreenRender.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +40,7 @@ main(int argc, char** argv)
 		return 2;
 	}
 	std::string error;
-	if (!game_data_load(argv[1], &error)) {
+	if (!LoadGameRom(argv[1], &error)) {
 		fprintf(stderr, "%s\n", error.c_str());
 		return 1;
 	}
@@ -93,21 +93,21 @@ main(int argc, char** argv)
 	for (long t = 0; t < ticks; t++) {
 		while (next < script.size() && script[next].tick == t) {
 			if (script[next].down)
-				g_keyMatrix[script[next].row] &= (uint8_t)~(1 << script[next].bit);
+				gKeyMatrix[script[next].row] &= (uint8_t)~(1 << script[next].bit);
 			else
-				g_keyMatrix[script[next].row] |= (uint8_t)(1 << script[next].bit);
+				gKeyMatrix[script[next].row] |= (uint8_t)(1 << script[next].bit);
 			next++;
 		}
 		InterruptTick();
 		audio.Tick(sound, false);
-		screen_render(g_screen, frame.data());
+		RenderScreen(gScreen, frame.data());
 		if (shots.count(t) || (every > 0 && t % every == 0)) {
 			char name[64];
 			snprintf(name, sizeof(name), "/native_%05ld.ppm", t);
 			write_ppm(outDir + name, frame.data());
 		}
-		if (g_unported != NULL) {
-			printf("tick %ld: not rewritten yet: %s\n", t, g_unported);
+		if (gUnported != NULL) {
+			printf("tick %ld: not rewritten yet: %s\n", t, gUnported);
 			break;
 		}
 	}

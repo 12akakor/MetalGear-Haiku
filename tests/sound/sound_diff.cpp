@@ -10,11 +10,11 @@
  *
  *   sound_diff <rom> [frames] [keys]
  */
-#include "../../src/game/game_data.h"
-#include "../../src/game/game_ram.h"
-#include "../../src/game/sound_driver.h"
-#include "../../src/game/rom_symbols.h"
-#include "../../src/msx/machine.h"
+#include "../../src/game/GameData.h"
+#include "../../src/game/GameRam.h"
+#include "../../src/game/SoundDriver.h"
+#include "../../src/game/RomSymbols.h"
+#include "../../src/msx/Machine.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,8 +25,8 @@
 
 namespace {
 
-#define kUpdateSound rom_symbol(sym::UpdateSound)
-#define kSetSound rom_symbol(sym::SetSound)
+#define kUpdateSound RomSymbol(sym::UpdateSound)
+#define kSetSound RomSymbol(sym::SetSound)
 const uint16_t kReturn = 0xe000;
 
 typedef std::vector<std::pair<int, int> > Writes;
@@ -76,7 +76,7 @@ compare(const char* what, int id, long tick, const Writes& original)
 	bool ok = original == sRecorder.writes;
 	int firstRam = -1;
 	for (int i = 0; i < 0x200 && firstRam < 0; i++) {
-		if (sMachine.Ram()[i] != g_ram[i])
+		if (sMachine.Ram()[i] != gRam[i])
 			firstRam = i;
 	}
 	if (ok && firstRam < 0)
@@ -86,7 +86,7 @@ compare(const char* what, int id, long tick, const Writes& original)
 		printf("FAIL %s id %02X tick %ld:", what, id, tick);
 		if (firstRam >= 0)
 			printf(" RAM %04X original %02X port %02X;", 0xc000 + firstRam,
-				sMachine.Ram()[firstRam], g_ram[firstRam]);
+				sMachine.Ram()[firstRam], gRam[firstRam]);
 		if (!ok) {
 			printf(" PSG original");
 			for (auto& w : original)
@@ -106,16 +106,16 @@ void
 run_sound(const std::vector<std::pair<long, int> >& script, long ticks, int id)
 {
 	memset(sMachine.Ram(), 0, 0x4000);
-	memset(g_ram, 0, sizeof(g_ram));
-	sDriver.regD = sDriver.regE = 0;
+	memset(gRam, 0, sizeof(gRam));
+	sDriver.fRegD = sDriver.fRegE = 0;
 	sMachine.Cpu().r.d = sMachine.Cpu().r.e = 0;
 	Writes original;
 	size_t next = 0;
 	for (long t = 0; t < ticks; t++) {
 		while (next < script.size() && script[next].first == t) {
 			int sound = script[next++].second;
-			sMachine.Cpu().r.d = sDriver.regD;
-			sMachine.Cpu().r.e = sDriver.regE;
+			sMachine.Cpu().r.d = sDriver.fRegD;
+			sMachine.Cpu().r.e = sDriver.fRegE;
 			call_original(kSetSound, (uint8_t)sound, original);
 			sRecorder.writes.clear();
 			sDriver.SetSound((uint8_t)sound);
@@ -127,8 +127,8 @@ run_sound(const std::vector<std::pair<long, int> >& script, long ticks, int id)
 		uint8_t d = (uint8_t)(t * 7), e = (uint8_t)(t * 13);
 		sMachine.Cpu().r.d = d;
 		sMachine.Cpu().r.e = e;
-		sDriver.regD = d;
-		sDriver.regE = e;
+		sDriver.fRegD = d;
+		sDriver.fRegE = e;
 		call_original(kUpdateSound, 0, original);
 		sRecorder.writes.clear();
 		sDriver.Update();
@@ -155,11 +155,11 @@ main(int argc, char** argv)
 	}
 	fclose(fp);
 	std::string error;
-	if (!game_data_set(rom, &error)) {
+	if (!SetGameRom(rom, &error)) {
 		fprintf(stderr, "%s\n", error.c_str());
 		return 1;
 	}
-	printf("ROM: %s\n", game_rom_version_name(game_rom_version()));
+	printf("ROM: %s\n", RomVersionName(LoadedRomVersion()));
 	sMachine.LoadRom(rom);
 	sMachine.Reset();
 	sDriver.SetListener(&sRecorder);
@@ -202,9 +202,9 @@ main(int argc, char** argv)
 			return;
 		/* Copy state, run the C++ version, then let the original run
 		   to the return address and compare. */
-		memcpy(g_ram, sMachine.Ram(), sizeof(g_ram));
-		sDriver.regD = r.d;
-		sDriver.regE = r.e;
+		memcpy(gRam, sMachine.Ram(), sizeof(gRam));
+		sDriver.fRegD = r.d;
+		sDriver.fRegE = r.e;
 		uint16_t ret = (uint16_t)(sMachine.Read(r.sp) | (sMachine.Read((uint16_t)(r.sp + 1)) << 8));
 		uint16_t sp = (uint16_t)(r.sp + 2);
 		bool update = r.pc == kUpdateSound;

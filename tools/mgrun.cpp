@@ -9,7 +9,7 @@
  *     -out dir        output directory (default "out")
  *     -stats          print BIOS call counts and VDP command count
  */
-#include "../src/msx/machine.h"
+#include "../src/msx/Machine.h"
 
 #include <stdio.h>
 #include <stdlib.h>

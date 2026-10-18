@@ -1,18 +1,18 @@
 # Metal Gear for Haiku and RenkuOS
-#   make          builds MetalGear
+#   make          builds MetalGear (Haiku)
 #   make tools    builds the test and helper tools (any POSIX system)
 
 CXX ?= g++
 CXXFLAGS ?= -O2 -std=c++17 -Wall
-GAME = src/game/game_data.cpp src/game/rom.cpp src/game/rom_symbols.cpp \
-	src/game/screen.cpp src/game/screen_render.cpp src/game/gfx_basic.cpp \
-	src/game/room_gfx.cpp src/game/sound_driver.cpp src/game/input.cpp \
-	src/game/game_main.cpp src/game/title.cpp
-AUDIO = src/audio/game_audio.cpp src/audio/music_renderer.cpp \
-	src/audio/reverb.cpp src/audio/tone_synth.cpp
-PLATFORM = src/platform/platform_haiku.cpp src/platform/platform_common.cpp \
-	src/platform/video_scaler.cpp src/platform/keynames.cpp
-REF = src/msx/machine.cpp src/msx/psg.cpp src/msx/vdp.cpp src/z80/z80.cpp
+GAME = src/game/GameData.cpp src/game/Rom.cpp src/game/RomSymbols.cpp \
+	src/game/Screen.cpp src/game/ScreenRender.cpp src/game/GfxBasic.cpp \
+	src/game/RoomGfx.cpp src/game/SoundDriver.cpp src/game/Input.cpp \
+	src/game/GameMain.cpp src/game/Title.cpp
+AUDIO = src/audio/GameAudio.cpp src/audio/MusicRenderer.cpp \
+	src/audio/Reverb.cpp src/audio/ToneSynth.cpp
+PLATFORM = src/platform/PlatformHaiku.cpp src/platform/PlatformCommon.cpp \
+	src/platform/VideoScaler.cpp src/platform/KeyNames.cpp
+REF = src/msx/Machine.cpp src/msx/Psg.cpp src/msx/Vdp.cpp src/z80/Z80.cpp
 
 MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ -lbe -lmedia -ltranslation -ldevice
@@ -21,7 +21,7 @@ tools: mgnative mg-romcheck mg-hdtool sound_diff room_diff game_diff
 
 mgnative: tools/mgnative.cpp $(GAME) $(AUDIO)
 	$(CXX) $(CXXFLAGS) -o $@ $^
-mg-romcheck: tools/romcheck.cpp src/game/game_data.cpp src/game/rom_symbols.cpp
+mg-romcheck: tools/romcheck.cpp src/game/GameData.cpp src/game/RomSymbols.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
 mg-hdtool: tools/hdtool.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^

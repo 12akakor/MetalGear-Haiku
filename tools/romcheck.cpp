@@ -5,7 +5,7 @@
  *
  *   mg-romcheck <rom> [...]
  */
-#include "../src/game/game_data.h"
+#include "../src/game/GameData.h"
 
 #include <stdio.h>
 #include <vector>
@@ -27,12 +27,12 @@ main(int argc, char** argv)
 		while ((n = fread(buf, 1, sizeof(buf), fp)) > 0)
 			image.insert(image.end(), buf, buf + n);
 		fclose(fp);
-		RomInfo info = game_rom_identify(image);
+		RomInfo info = IdentifyRom(image);
 		printf("%s\n  size %zu, CRC32 %08X, SHA1 %s\n  result: %s%s\n", argv[i],
 			info.originalSize, info.crc32, info.sha1,
 			info.version == kRomUnknown ? "NOT SUPPORTED"
 				: info.exact ? "OK, " : "probably OK, ",
-			info.version == kRomUnknown ? "" : game_rom_version_name(info.version));
+			info.version == kRomUnknown ? "" : RomVersionName(info.version));
 		if (!info.note.empty())
 			printf("  note: %s\n", info.note.c_str());
 		if (info.version != kRomUnknown) {

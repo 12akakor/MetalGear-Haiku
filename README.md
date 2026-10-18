@@ -16,7 +16,7 @@ lightly modified versions (translations, small hacks) are accepted with a
 warning when at least 12 of the 16 banks equal one of the two. Check a ROM
 with `mg-romcheck`: it prints only checksums, so its output can be shared.
 
-    g++ -O2 -std=c++17 -o mg-romcheck tools/romcheck.cpp src/game/game_data.cpp src/game/rom_symbols.cpp
+    g++ -O2 -std=c++17 -o mg-romcheck tools/romcheck.cpp src/game/GameData.cpp src/game/RomSymbols.cpp
     ./mg-romcheck MetalGear.rom
 
 Metal Gear is a trademark of Konami. This project is not affiliated with or
@@ -94,12 +94,33 @@ Metal Gear uses F1-F5 itself):
     ./music_preview MetalGear.rom FluidR3_GM.sf2 out 60
 
     # graphics export, HD tool
-    g++ -O2 -std=c++17 -o gfx_export tools/gfx_export.cpp src/msx/*.cpp src/z80/z80.cpp
+    g++ -O2 -std=c++17 -o gfx_export tools/gfx_export.cpp src/game/*.cpp src/msx/*.cpp src/z80/*.cpp
     ./gfx_export MetalGear.rom export
     g++ -O2 -std=c++17 -o mg-hdtool tools/hdtool.cpp
 
     # sound driver test against the original
-    g++ -O2 -std=c++17 -o sound_diff tests/sound/sound_diff.cpp src/game/*.cpp src/msx/*.cpp src/z80/z80.cpp
+    make tools          # tests and tools: sound_diff, room_diff, game_diff, mgnative, ...
     ./sound_diff MetalGear.rom
+    ./game_diff MetalGear.rom 700
+
+## Coding style
+
+The code follows the [Haiku coding guidelines](https://www.haiku-os.org/development/coding-guidelines)
+with these deliberate exceptions:
+
+- The game core (`src/game`, `src/audio`) does not depend on Haiku, so the
+  tests and tools also build on other systems. It uses the `stdint.h` types
+  (`uint8_t`) instead of the SupportDefs.h types (`uint8`).
+- Routines rewritten from the disassembly keep the names of the
+  disassembly (`VDP_Copy_Byte`, `LoadRoomTiles`, `SNSMAT`), so every one
+  can be found in the original and checked against it.
+- The sound driver (`src/game/SoundDriver.cpp`) keeps the jump structure of
+  the original routine with `goto`, so it can be compared with
+  `bgmdriver.asm` line by line.
+- `src/msx` and `src/z80` are the reference machine for the tests only;
+  they are not part of the game.
+
+`tools/check/haiku_syntax.sh` checks the Haiku specific code against the
+real Haiku headers on another system.
 
 Port by Akakor, developed with the help of Claude (Anthropic).

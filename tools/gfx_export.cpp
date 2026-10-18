@@ -16,9 +16,9 @@
  *
  *   gfx_export <rom> <outdir>
  */
-#include "../src/msx/machine.h"
-#include "../src/game/game_data.h"
-#include "../src/game/rom_symbols.h"
+#include "../src/msx/Machine.h"
+#include "../src/game/GameData.h"
+#include "../src/game/RomSymbols.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,10 +37,10 @@
 namespace {
 
 const uint16_t kRoom = 0xc130;
-#define kLoadRoomTiles rom_symbol(sym::LoadRoomTiles)
-#define kSetRoomPal rom_symbol(sym::SetRoomPal)
-#define kRenderRoom rom_symbol(sym::RenderRoom)
-#define kSetRoomPal2 rom_symbol(sym::SetRoomPal2)
+#define kLoadRoomTiles RomSymbol(sym::LoadRoomTiles)
+#define kSetRoomPal RomSymbol(sym::SetRoomPal)
+#define kRenderRoom RomSymbol(sym::RenderRoom)
+#define kSetRoomPal2 RomSymbol(sym::SetRoomPal2)
 const uint16_t kReturn = 0xe000;
 
 Machine sMachine;
@@ -138,7 +138,7 @@ main(int argc, char** argv)
 	mkdir((out + "/rooms_x4").c_str(), 0755);
 
 	std::string error;
-	if (!game_data_set(rom, &error)) {
+	if (!SetGameRom(rom, &error)) {
 		fprintf(stderr, "%s\n", error.c_str());
 		return 1;
 	}
@@ -239,14 +239,14 @@ main(int argc, char** argv)
 	for (auto& key : order) {
 		Tile& t = tiles[key];
 		stbi_write_png((out + "/tiles/" + key + ".png").c_str(), 8, 8, 3, t.rgb.data(), 24);
-		fprintf(csv, "%s,%d,%d,%d,", key.c_str(), t.tileset, t.palette, t.position);
+		fprintf(csv, "%s,%d,%d,%d,", key.c_str(), t.tileset, t.fPalette, t.position);
 		bool first = true;
 		for (int r : t.rooms) {
 			fprintf(csv, first ? "%d" : " %d", r);
 			first = false;
 		}
 		fprintf(csv, "\n");
-		perSet[std::make_pair(t.tileset, t.palette)].push_back(key);
+		perSet[std::make_pair(t.tileset, t.fPalette)].push_back(key);
 	}
 	fclose(csv);
 	const int scale = 8, cell = 8 * scale + 2, columns = 16;

@@ -4,9 +4,9 @@
  *
  *   music_preview <rom> <soundfont.sf2> <outdir> [seconds] [music.cfg]
  */
-#include "../src/audio/game_audio.h"
-#include "../src/game/game_data.h"
-#include "../src/game/game_ram.h"
+#include "../src/audio/GameAudio.h"
+#include "../src/game/GameData.h"
+#include "../src/game/GameRam.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +37,7 @@ main(int argc, char** argv)
 		fprintf(stderr, "usage: music_preview <rom> <sf2> <outdir> [seconds] [music.cfg]\n");
 		return 2;
 	}
-	if (!game_data_load(argv[1])) {
+	if (!LoadGameRom(argv[1])) {
 		fprintf(stderr, "cannot read ROM\n");
 		return 1;
 	}
@@ -48,7 +48,7 @@ main(int argc, char** argv)
 		"44_just_another_dead_soldier" };
 	for (int mode = 0; mode < 2; mode++) {
 		for (int m = 0; m < 10; m++) {
-			memset(g_ram, 0, sizeof(g_ram));
+			memset(gRam, 0, sizeof(gRam));
 			static GameAudio* audio = NULL;
 			delete audio;
 			audio = new GameAudio();
@@ -70,7 +70,7 @@ main(int argc, char** argv)
 				if (t > 1200 && t % 150 == 0)
 					audio->Driver().SetSound((uint8_t)(t / 150 % 2 ? 0x0c : 0x24));
 				audio->Tick(out);
-				bool playing = ram(0xc012) | ram(0xc032) | ram(0xc052) | ram(0xc072);
+				bool playing = Ram(0xc012) | Ram(0xc032) | Ram(0xc052) | Ram(0xc072);
 				if (!playing && t > 60)
 					break;
 			}

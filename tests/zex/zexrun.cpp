@@ -3,7 +3,7 @@
  * BDOS functions 2 and 9 are handled when PC reaches 0x0005.
  * Usage: zexrun file.com
  */
-#include "../../src/z80/z80.h"
+#include "../../src/z80/Z80.h"
 
 #include <stdio.h>
 #include <string.h>
