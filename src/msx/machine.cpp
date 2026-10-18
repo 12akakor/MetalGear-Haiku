@@ -82,12 +82,28 @@ Machine::LoadRom(const std::vector<uint8_t>& rom)
 void
 Machine::Reset()
 {
+	bool japanese = false;
+	if (fRom.size() == 0x20000) {
+		uint32_t crc = 0xffffffff;
+		for (uint8_t b : fRom) {
+			crc ^= b;
+			for (int k = 0; k < 8; k++)
+				crc = (crc >> 1) ^ (0xedb88320 & (0u - (crc & 1)));
+		}
+		japanese = ~crc == 0xfafe1303;
+	}
 	memset(fBios, 0xc9, sizeof(fBios));		/* RET everywhere */
 	fBios[0x0006] = 0x98;	/* VDP read port */
 	fBios[0x0007] = 0x98;	/* VDP write port */
 	fBios[0x002b] = 0x11;	/* international, 60 Hz */
 	fBios[0x002c] = 0x00;
 	fBios[0x002d] = 0x01;	/* MSX2 */
+	if (japanese) {
+		/* Japanese MSX: character set, date format and keyboard
+		   (the Japanese version checks this) */
+		fBios[0x002b] = 0x00;
+		fBios[0x002c] = 0x00;
+	}
 	/* #0038: JP to the handler (the entry points from #0047 on follow). */
 	fBios[0x38] = 0xc3;
 	fBios[0x39] = 0x00;

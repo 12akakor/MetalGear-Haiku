@@ -13,18 +13,20 @@
 #include "../../src/game/game_data.h"
 #include "../../src/game/game_ram.h"
 #include "../../src/game/sound_driver.h"
+#include "../../src/game/rom_symbols.h"
 #include "../../src/msx/machine.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <vector>
 
 
 namespace {
 
-const uint16_t kUpdateSound = 0x6000;
-const uint16_t kSetSound = 0x67fd;
+#define kUpdateSound rom_symbol(sym::UpdateSound)
+#define kSetSound rom_symbol(sym::SetSound)
 const uint16_t kReturn = 0xe000;
 
 typedef std::vector<std::pair<int, int> > Writes;
@@ -152,7 +154,12 @@ main(int argc, char** argv)
 		return 1;
 	}
 	fclose(fp);
-	game_data_set(rom);
+	std::string error;
+	if (!game_data_set(rom, &error)) {
+		fprintf(stderr, "%s\n", error.c_str());
+		return 1;
+	}
+	printf("ROM: %s\n", game_rom_version_name(game_rom_version()));
 	sMachine.LoadRom(rom);
 	sMachine.Reset();
 	sDriver.SetListener(&sRecorder);

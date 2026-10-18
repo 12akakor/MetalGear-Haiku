@@ -9,6 +9,7 @@
 
 #include "game_data.h"
 #include "game_ram.h"
+#include "rom_symbols.h"
 
 
 namespace {
@@ -35,11 +36,9 @@ enum {
 };
 
 /* Sound data addresses (sounddata.asm, instruments.asm, bgmdriver.asm). */
-enum {
-	kNoteFrequency = 0x63fd,
-	kInstruments = 0x652b,
-	kIdxSoundData = 0x6892
-};
+#define kNoteFrequency rom_symbol(sym::NoteFrequency)
+#define kInstruments rom_symbol(sym::Instruments)
+#define kIdxSoundData rom_symbol(sym::idxSoundData)
 
 /* Fields of a channel work area (SOUND structure). */
 enum {

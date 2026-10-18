@@ -17,6 +17,8 @@
  *   gfx_export <rom> <outdir>
  */
 #include "../src/msx/machine.h"
+#include "../src/game/game_data.h"
+#include "../src/game/rom_symbols.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,9 +37,10 @@
 namespace {
 
 const uint16_t kRoom = 0xc130;
-const uint16_t kLoadRoomTiles = 0x4935;
-const uint16_t kSetRoomPal = 0x4acb;
-const uint16_t kRenderRoom = 0x4cf0;
+#define kLoadRoomTiles rom_symbol(sym::LoadRoomTiles)
+#define kSetRoomPal rom_symbol(sym::SetRoomPal)
+#define kRenderRoom rom_symbol(sym::RenderRoom)
+#define kSetRoomPal2 rom_symbol(sym::SetRoomPal2)
 const uint16_t kReturn = 0xe000;
 
 Machine sMachine;
@@ -134,6 +137,11 @@ main(int argc, char** argv)
 	mkdir((out + "/sheets").c_str(), 0755);
 	mkdir((out + "/rooms_x4").c_str(), 0755);
 
+	std::string error;
+	if (!game_data_set(rom, &error)) {
+		fprintf(stderr, "%s\n", error.c_str());
+		return 1;
+	}
 	sMachine.LoadRom(rom);
 	sMachine.Reset();
 	/* Start a game: SPACE on the title screen. */
@@ -157,7 +165,7 @@ main(int argc, char** argv)
 	uint8_t pal[16][3];
 	std::vector<std::string> roomKeys(32 * 24);
 	sMachine.onStep = [&]() {
-		if (sMachine.Cpu().r.pc == 0x4b03)		/* SetRoomPal2: A = palette */
+		if (sMachine.Cpu().r.pc == kSetRoomPal2)		/* SetRoomPal2: A = palette */
 			paletteId = sMachine.Cpu().r.a;
 	};
 	sMachine.GetVdp().onCommand = [&](const Vdp::Command& c) {

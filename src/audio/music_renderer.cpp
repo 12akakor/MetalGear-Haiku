@@ -2,6 +2,7 @@
 
 #include "../game/game_data.h"
 #include "../game/game_ram.h"
+#include "../game/rom_symbols.h"
 
 #define TSF_IMPLEMENTATION
 #include "../../third_party/tsf/tsf.h"
@@ -18,8 +19,8 @@ const uint16_t kSoundWorkAreaSfx = 0xc070;
 const uint16_t kVolumeFadeVal = 0xc0f6;
 const uint16_t kSoundDataSaved = 0xc0f2;
 const uint16_t kMuteSoundFlag = 0xc0f8;
-const uint16_t kInstruments = 0x652b;
-const uint16_t kNoteFrequency = 0x63fd;
+#define kInstruments rom_symbol(sym::Instruments)
+#define kNoteFrequency rom_symbol(sym::NoteFrequency)
 
 enum {
 	ID = 2, CONFIG = 5, NOTE_MODE = 14, FREQ_MOD = 15, INSTRUMENT = 16,
