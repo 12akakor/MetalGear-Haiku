@@ -10,6 +10,7 @@ GameAudio::GameAudio()
 	musicGain(1.0f),
 	effectsGain(0.55f),
 	classicGain(0.75f),
+	fDriver(g_soundDriver),
 	fMode(kEnhanced),
 	fRate(44100),
 	fOwed(0)
@@ -51,9 +52,10 @@ GameAudio::NoteStart(int area, int note, int octave, int instrument)
 
 
 void
-GameAudio::Tick(std::vector<int16_t>& out)
+GameAudio::Tick(std::vector<int16_t>& out, bool updateDriver)
 {
-	fDriver.Update();
+	if (updateDriver)
+		fDriver.Update();
 
 	bool enhanced = fMode == kEnhanced && fMusic.Ready();
 	if (enhanced) {

@@ -40,6 +40,9 @@ public:
 			void		Update();
 	/* Starts music or a sound effect (sound IDs as in sounddata.asm). */
 			void		SetSound(uint8_t id);
+	/* A direct register write by the game (BIOS WRTPSG). */
+			void		WritePsg(int reg, uint8_t value)
+							{ if (fListener) fListener->SoundRegister(reg & 0x0f, value); }
 
 	/* Register values the original carries from one call to the next
 	   (they only matter in a few corner cases). Public for the tests. */
@@ -66,5 +69,8 @@ private:
 			uint8_t		fC;		/* PSG tone register (high) of the channel */
 			uint16_t	fIx;	/* work area of the channel */
 };
+
+/* The game's sound driver. */
+extern SoundDriver g_soundDriver;
 
 #endif

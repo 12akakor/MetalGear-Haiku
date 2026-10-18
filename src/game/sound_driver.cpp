@@ -58,6 +58,9 @@ data(uint16_t address)
 }	// namespace
 
 
+SoundDriver g_soundDriver;
+
+
 SoundDriver::SoundDriver()
 	:
 	regD(0),

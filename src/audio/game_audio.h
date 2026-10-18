@@ -37,9 +37,10 @@ public:
 			SoundDriver& Driver() { return fDriver; }
 			MusicRenderer& Music() { return fMusic; }
 
-	/* One game tick: driver update, then the samples of this tick are
-	   rendered and appended to 'out' (interleaved stereo). */
-			void		Tick(std::vector<int16_t>& out);
+	/* One game tick: driver update (unless the game did it already),
+	   then the samples of this tick are rendered and appended to 'out'
+	   (interleaved stereo). */
+			void		Tick(std::vector<int16_t>& out, bool updateDriver = true);
 
 	/* SoundListener */
 	virtual	void		SoundRegister(int reg, uint8_t value);
@@ -48,7 +49,7 @@ public:
 			float		musicGain, effectsGain, classicGain;
 
 private:
-			SoundDriver	fDriver;
+			SoundDriver&	fDriver;
 			ToneSynth	fSynth;
 			MusicRenderer fMusic;
 			Mode		fMode;

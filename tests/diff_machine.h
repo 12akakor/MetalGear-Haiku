@@ -103,6 +103,8 @@ public:
 		for (int a = 0xc000; a < 0x10000; a++) {
 			if (a >= 0xf200 && a < 0xf380)
 				continue;		/* stack used by the test */
+			if (a >= 0xef00 && a < 0xf0f0)
+				continue;		/* the game's stack (no variables there) */
 			if (ram[a - 0xc000] != g_ram[a - 0xc000]) {
 				if (ramDiffs++ < 4) {
 					snprintf(buf, sizeof(buf), " RAM %04X ref %02X port %02X;", a,

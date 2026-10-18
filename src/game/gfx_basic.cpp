@@ -255,3 +255,257 @@ GetPointerDE2A(uint16_t table, uint8_t index)
 {
 	return rom16((uint16_t)(table + index * 2));
 }
+
+
+/* VDP_Copy_Dot: LMMM; pagesOp = OODDLLLL (source page, destination page,
+   logical operation). */
+void
+VDP_Copy_Dot(uint8_t sx, uint8_t sy, uint8_t pagesOp, uint8_t dx, uint8_t dy, uint8_t nx,
+	uint8_t ny)
+{
+	int sourcePage = (pagesOp >> 6) & 3;
+	int destPage = (pagesOp >> 4) & 3;
+	g_screen.CopyPixels(sx, sy + sourcePage * 256, dx, dy + destPage * 256, nx, ny,
+		pagesOp & 0x0f);
+}
+
+
+/* DrawTile_P1: tile within page 1. */
+void
+DrawTile_P1(uint8_t tile, uint8_t dx, uint8_t dy)
+{
+	uint8_t x, y;
+	GetTileXY(tile, &x, &y);
+	VDP_Copy_Byte(x, y, 5, dx, dy, 8, 8);
+}
+
+
+void
+DrawTileList(uint16_t data, uint8_t x, uint8_t y)
+{
+	uint8_t rowX = x, rowY = y;
+	for (;;) {
+		uint8_t c = rom(data++);
+		if (c == 0xff)
+			break;
+		if (c == 0xfe) {
+			rowX = (uint8_t)(rowX + rom(data++));
+			rowY = (uint8_t)(rowY + 8);
+			x = rowX;
+			y = rowY;
+			continue;
+		}
+		DrawTile_P1(c, x, y);
+		CalcNextCharPos(&x, &y);
+	}
+	set_banks(1);		/* DrawTileList4 */
+}
+
+
+/* DrawChar: font in page 1 from y #30 (tile = char + #10); char 0 or
+   colour 0 copies the blank tile at (0,0) of page 1. */
+void
+DrawChar(uint8_t c, uint8_t color, uint8_t x, uint8_t y)
+{
+	uint8_t sx = 0, sy = 0;
+	if (c != 0 && color != 0) {
+		GetTileXY((uint8_t)(c + 0x10), &sx, &sy);
+		sy = (uint8_t)(sy + 0x30);
+	}
+	VDP_Copy_Byte(sx, sy, 1, x, y, 8, 8);
+}
+
+
+static void
+print_text(uint16_t text, uint8_t color)
+{
+	uint8_t x = rom(text++);
+	uint8_t y = rom(text++);
+	for (;;) {
+		uint8_t c = rom(text++);
+		if (c == 0xff)
+			return;
+		if (c == 0xfe) {
+			x = rom(text++);
+			y = rom(text++);
+			continue;
+		}
+		DrawChar(c, color, x, y);
+		x = (uint8_t)(x + ((c == 0x97 || c == 0x98) ? 4 : 8));
+	}
+}
+
+
+void
+PrintTextXY(uint16_t text)
+{
+	print_text(text, 0xff);
+}
+
+
+void
+EraseTextXY(uint16_t text)
+{
+	print_text(text, 0);
+}
+
+
+/* Decode1bppTile: 8 bytes, set bits in 'color', into DecodeTileBuf. */
+void
+Decode1bppTile(uint16_t source, uint8_t color)
+{
+	uint16_t out = var::DecodeTileBuf;
+	for (int line = 0; line < 8; line++) {
+		uint8_t bits = rom(source++);
+		for (int i = 0; i < 4; i++) {
+			uint8_t hi = (bits & 0x80) ? color : 0;
+			uint8_t lo = (bits & 0x40) ? color : 0;
+			bits = (uint8_t)(bits << 2);
+			ram(out++) = (uint8_t)(((hi & 0x0f) << 4) | (lo & 0x0f));
+		}
+	}
+}
+
+
+void
+Load1bppTile(uint16_t source, uint8_t x, uint8_t y, uint8_t color)
+{
+	Decode1bppTile(source, color);
+	uint16_t dest = (uint16_t)((((y << 8) | x) >> 1) + 0x8000);
+	LoadTileGfx(var::DecodeTileBuf, dest);
+}
+
+
+uint16_t
+Load1bppTiles(uint16_t source, uint8_t* x, uint8_t* y, int count, uint8_t color)
+{
+	do {
+		Load1bppTile(source, *x, *y, color);
+		source = (uint16_t)(source + 8);
+		CalcNextCharPos(x, y);
+	} while (--count > 0);
+	return source;
+}
+
+
+static uint16_t
+decode_2bpp_tile(uint16_t source)
+{
+	uint16_t out = var::BufferGfx;
+	for (int line = 0; line < 8; line++) {
+		uint8_t e = rom(source++);
+		uint8_t d = rom(source++);
+		for (int i = 0; i < 4; i++) {
+			uint8_t pixel[2];
+			for (int p = 0; p < 2; p++) {
+				int index = ((d >> 7) << 1) | (e >> 7);
+				d = (uint8_t)(d << 1);
+				e = (uint8_t)(e << 1);
+				pixel[p] = ram((uint16_t)(var::BufferColor + index));
+			}
+			ram(out++) = (uint8_t)((pixel[0] << 4) | pixel[1]);
+		}
+	}
+	return source;
+}
+
+
+uint16_t
+Load2bppTile(uint16_t source, uint16_t* dest, int count)
+{
+	do {
+		source = decode_2bpp_tile(source);
+		LoadTilesGfx(var::BufferGfx, dest, 1);
+	} while (--count > 0);
+	return source;
+}
+
+
+/* FillVRAM: 'count' bytes (0 means 65536). */
+void
+FillVRAM(uint32_t address, int count, uint8_t value)
+{
+	if (count == 0)
+		count = 0x10000;
+	for (int i = 0; i < count; i++)
+		g_screen.Write(address + (uint32_t)i, value);
+}
+
+
+/* Both sprite attribute buffers: Y = #E0 hides the sprite. */
+void
+ClearSprAttr()
+{
+	FillVRAM(0xf600, 0x80, 0xe0);
+	FillVRAM(0xf200, 0x80, 0xe0);
+}
+
+
+void
+EnableSprites()
+{
+	WRTVDP(8, (uint8_t)(ram(var::RG08SAV) & 0xfd));
+}
+
+
+void
+DisableSprites()
+{
+	WRTVDP(8, (uint8_t)(ram(var::RG08SAV) | 2));
+}
+
+
+void
+EnableScreen()
+{
+	WRTVDP(1, (uint8_t)(ram(var::RG1SAV) | 0x40));
+	EnableSprites();
+}
+
+
+void
+DisableScreen()
+{
+	WRTVDP(1, (uint8_t)(ram(var::RG1SAV) & 0xbf));
+	DisableSprites();
+}
+
+
+void
+ClearScreen()
+{
+	ClearSprAttr();
+	DisableScreen();
+	ClearPage0();
+	EnableScreen();
+}
+
+
+void
+SetDefaultPal()
+{
+	uint16_t p = SYM(DefaultPalette);
+	for (int i = 0; i < 16; i++) {
+		uint8_t rb = rom(p++);
+		uint8_t g = rom(p++);
+		SetPaletteColor(i, rb, g);
+	}
+}
+
+
+void
+SetBanks_1_2_X()
+{
+	set_banks(1);
+	uint8_t fixed = ram(var::BankInA0Fixed);
+	if (fixed != 0)
+		ram(var::BankInA0) = fixed;
+}
+
+
+void
+SetBankInA0(uint8_t bank)
+{
+	ram(var::BankInA0) = bank;
+	ram(var::BankInA0Fixed) = bank;
+}

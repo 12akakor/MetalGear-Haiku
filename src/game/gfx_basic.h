@@ -50,3 +50,30 @@ uint8_t		GetNibbleRoom(uint16_t table);
 uint16_t	GetPointerDE2A(uint16_t table, uint8_t index);
 
 #endif
+
+/* More drawing routines (title, text, sprites) */
+void		VDP_Copy_Dot(uint8_t sx, uint8_t sy, uint8_t pagesOp, uint8_t dx, uint8_t dy,
+				uint8_t nx, uint8_t ny);
+void		DrawTile_P1(uint8_t tile, uint8_t dx, uint8_t dy);
+/* Tile list: tiles, #FE offset = next row (x += offset, y += 8), #FF end. */
+void		DrawTileList(uint16_t data, uint8_t x, uint8_t y);
+void		DrawChar(uint8_t c, uint8_t color, uint8_t x, uint8_t y);
+/* Text: XY, characters, #FE XY, ... #FF. 'erase' draws blanks. */
+void		PrintTextXY(uint16_t text);
+void		EraseTextXY(uint16_t text);
+void		Decode1bppTile(uint16_t source, uint8_t color);
+void		Load1bppTile(uint16_t source, uint8_t x, uint8_t y, uint8_t color);
+/* Returns the source after the data; x, y advanced. */
+uint16_t	Load1bppTiles(uint16_t source, uint8_t* x, uint8_t* y, int count, uint8_t color);
+uint16_t	Load2bppTile(uint16_t source, uint16_t* dest, int count);
+void		FillVRAM(uint32_t address, int count, uint8_t value);
+void		ClearSprAttr();
+void		EnableScreen();
+void		DisableScreen();
+void		EnableSprites();
+void		DisableSprites();
+void		ClearScreen();
+void		SetDefaultPal();
+/* Banks 1, 2 and (BankInA0Fixed or 3): what the "_" helpers restore. */
+void		SetBanks_1_2_X();
+void		SetBankInA0(uint8_t bank);

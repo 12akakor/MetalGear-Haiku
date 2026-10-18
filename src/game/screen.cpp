@@ -53,7 +53,13 @@ void
 Screen::Reset()
 {
 	memset(vram, 0, sizeof(vram));
-	memset(palette, 0, sizeof(palette));
+	/* MSX2 power-on palette (R, G, B, 0..7), as the BIOS sets it. */
+	static const uint8_t kDefault[16][3] = {
+		{0,0,0}, {0,0,0}, {1,6,1}, {3,7,3}, {1,1,7}, {2,3,7}, {5,1,1}, {2,6,7},
+		{7,1,1}, {7,3,3}, {6,6,1}, {6,6,4}, {1,4,1}, {6,2,5}, {5,5,5}, {7,7,7}
+	};
+	for (int i = 0; i < 16; i++)
+		SetPalette(i, (uint8_t)((kDefault[i][0] << 4) | kDefault[i][2]), kDefault[i][1]);
 	memset(reg_, 0, sizeof(reg_));
 }
 
