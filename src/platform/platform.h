@@ -113,6 +113,10 @@ int plat_modifiers(void);
    deterministic test driver, which writes the key state itself). */
 void plat_set_input_override(bool enabled);
 
+/* First joystick or game pad: bits 0-5 up, down, left, right, button 1,
+   button 2 (1 while pressed). 0 when there is none. */
+uint8_t plat_joystick(void);
+
 /* Same key names as the original game used (SDL 1.2 names). */
 const char* plat_key_name(MOGKey key);
 

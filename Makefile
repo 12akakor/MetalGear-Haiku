@@ -15,7 +15,7 @@ PLATFORM = src/platform/platform_haiku.cpp src/platform/platform_common.cpp \
 REF = src/msx/machine.cpp src/msx/psg.cpp src/msx/vdp.cpp src/z80/z80.cpp
 
 MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^ -lbe -lmedia -ltranslation
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lbe -lmedia -ltranslation -ldevice
 
 tools: mgnative mg-romcheck mg-hdtool sound_diff room_diff game_diff
 

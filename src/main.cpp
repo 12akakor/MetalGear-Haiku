@@ -83,6 +83,10 @@ matrix_position(int key)
 }
 
 
+/* Keys pressed since the last tick count as down for one tick, so a very
+   short tap between two ticks is not lost. */
+bool sTapped[MOGK_LAST];
+
 void
 update_matrix()
 {
@@ -91,12 +95,15 @@ update_matrix()
 	for (int r = 0; r < 11; r++)
 		g_keyMatrix[r] = 0xff;
 	for (int key = 1; key < MOGK_LAST; key++) {
-		if (!state[key])
+		if (state[key] == 0 && !sTapped[key])
 			continue;
+		sTapped[key] = false;
 		int p = matrix_position(key);
 		if (p >= 0)
 			g_keyMatrix[p / 8] &= (uint8_t)~(1 << (p % 8));
 	}
+	/* joystick port 1: 0 while pressed */
+	g_joystick = (uint8_t)(~plat_joystick() & 0x3f);
 }
 
 
@@ -120,8 +127,10 @@ load_rom(int argc, char** argv, std::string* message)
 	if (argc > 1)
 		return game_data_load(argv[1], message);
 	std::string dir = plat_settings_dir();
-	if (game_data_load((dir + "/MetalGear.rom").c_str(), &error))
+	std::string mainRom = dir + "/MetalGear.rom";
+	if (game_data_load(mainRom.c_str(), &error))
 		return true;
+	std::string mainError = error;
 	DIR* d = opendir(dir.c_str());
 	if (d != NULL) {
 		struct dirent* e;
@@ -139,8 +148,8 @@ load_rom(int argc, char** argv, std::string* message)
 	}
 	*message = "No Metal Gear ROM found.\n\nPut the ROM (English or Japanese version, "
 		"128 KB) in\n" + dir + "\nas MetalGear.rom, or give its path on the command line.";
-	if (!error.empty() && file_exists(dir + "/MetalGear.rom"))
-		*message = dir + "/MetalGear.rom: " + error;
+	if (file_exists(mainRom))
+		*message = mainRom + ": " + mainError;
 	return false;
 }
 
@@ -184,12 +193,15 @@ find_soundfont()
 const size_t kRing = 44100 * 2;		/* half a second, stereo */
 std::vector<int16_t> sRing(kRing);
 size_t sRead = 0, sWrite = 0, sFill = 0;
+size_t sLargestRequest = 0;		/* samples, biggest the audio thread asked */
 
 void
 audio_callback(int16_t* out, int frames, void*)
 {
 	size_t need = (size_t)frames * 2;
 	plat_audio_lock();
+	if (need > sLargestRequest)
+		sLargestRequest = need;
 	size_t n = need < sFill ? need : sFill;
 	for (size_t i = 0; i < n; i++) {
 		out[i] = sRing[sRead];
@@ -199,6 +211,21 @@ audio_callback(int16_t* out, int frames, void*)
 	plat_audio_unlock();
 	for (size_t i = n; i < need; i++)
 		out[i] = 0;
+}
+
+/* Samples queued, and how many should be queued: about 50 ms, at least
+   twice what the audio thread takes at once. */
+size_t
+audio_fill(size_t* target)
+{
+	plat_audio_lock();
+	size_t fill = sFill;
+	size_t largest = sLargestRequest;
+	plat_audio_unlock();
+	*target = 44100 / 20 * 2;
+	if (*target < largest * 2)
+		*target = largest * 2;
+	return fill;
 }
 
 void
@@ -248,7 +275,7 @@ game_main(int argc, char** argv)
 		audio.SetMode(GameAudio::kClassic);
 		printf("  music: classic (no SoundFont found)\n");
 	}
-	plat_audio_open(44100, audio_callback, NULL);
+	bool audioOpen = plat_audio_open(44100, audio_callback, NULL);
 
 	Start();
 
@@ -263,6 +290,8 @@ game_main(int argc, char** argv)
 			if (event.type == PLAT_EV_QUIT)
 				quit = true;
 			else if (event.type == PLAT_EV_KEYDOWN) {
+				if (event.key > 0 && event.key < MOGK_LAST)
+					sTapped[event.key] = true;
 				if (event.key == MOGK_q && (event.modifiers & PLAT_MOD_ALT)) {
 					quit = true;
 					continue;
@@ -319,12 +348,24 @@ game_main(int argc, char** argv)
 		plat_set_palette(palette);
 		plat_present(picture);
 
-		next += tickMs;
-		double now = plat_ticks_ms();
-		if (next > now)
-			plat_sleep_ms((uint32_t)(next - now));
-		else if (now - next > 250)
-			next = now;		/* fell behind: do not try to catch up */
+		if (audioOpen) {
+			/* The sound card sets the pace: keep about 50 ms of sound
+			   queued, so the delay stays short and constant and the game
+			   runs at exactly the speed of the sound. */
+			size_t target;
+			uint32_t waited = 0;
+			while (audio_fill(&target) > target && waited < 100) {
+				plat_sleep_ms(2);
+				waited += 2;
+			}
+		} else {
+			next += tickMs;
+			double now = plat_ticks_ms();
+			if (next > now)
+				plat_sleep_ms((uint32_t)(next - now));
+			else if (now - next > 250)
+				next = now;		/* fell behind: do not try to catch up */
+		}
 	}
 	plat_audio_close();
 	plat_shutdown();

@@ -21,6 +21,7 @@
 #include <Entry.h>
 #include <File.h>
 #include <Font.h>
+#include <Joystick.h>
 #include <FindDirectory.h>
 #include <Locker.h>
 #include <MediaDefs.h>
@@ -37,6 +38,7 @@
 #include <Window.h>
 
 #include <atomic>
+#include <vector>
 #include <math.h>
 #include <errno.h>
 #include <stdio.h>
@@ -393,6 +395,54 @@ main(int argc, char** argv)
 		wait_for_thread(sGameThread, &result);
 	}
 	return sExitCode;
+}
+
+
+/* Joystick ------------------------------------------------------------- */
+
+static BJoystick* sJoystick = NULL;
+static bool sJoystickTried = false;
+
+
+uint8_t
+plat_joystick(void)
+{
+	if (!sJoystickTried) {
+		sJoystickTried = true;
+		BJoystick* stick = new BJoystick;
+		char name[B_OS_NAME_LENGTH];
+		if (stick->CountDevices() > 0 && stick->GetDeviceName(0, name) == B_OK
+			&& stick->Open(name, true) >= 0)
+			sJoystick = stick;
+		else
+			delete stick;
+	}
+	if (sJoystick == NULL || sJoystick->Update() != B_OK)
+		return 0;
+
+	uint8_t bits = 0;
+	int32 axes = sJoystick->CountAxes();
+	if (axes >= 2) {
+		static std::vector<int16> values;
+		values.resize(axes);
+		if (sJoystick->GetAxisValues(values.data()) != B_OK)
+			return 0;
+		const int16 kDeadZone = 12000;
+		if (values[1] < -kDeadZone)
+			bits |= 0x01;
+		if (values[1] > kDeadZone)
+			bits |= 0x02;
+		if (values[0] < -kDeadZone)
+			bits |= 0x04;
+		if (values[0] > kDeadZone)
+			bits |= 0x08;
+	}
+	uint32 buttons = sJoystick->ButtonValues();
+	if ((buttons & 1) != 0)
+		bits |= 0x10;
+	if ((buttons & 2) != 0)
+		bits |= 0x20;
+	return bits;
 }
 
 

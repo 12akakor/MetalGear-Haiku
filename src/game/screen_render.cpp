@@ -3,6 +3,7 @@
 #include "screen.h"
 
 #include <string.h>
+#include <vector>
 
 
 uint32_t
@@ -105,8 +106,8 @@ render_sprites(const Screen& s, int line, uint8_t* colors, bool* set)
 void
 screen_render(const Screen& s, uint32_t* out)
 {
-	static uint8_t indexed[kScreenWidth * kScreenHeight];
-	screen_render_indexed(s, indexed);
+	std::vector<uint8_t> indexed(kScreenWidth * kScreenHeight);
+	screen_render_indexed(s, indexed.data());
 	uint32_t palette[16];
 	for (int i = 0; i < 16; i++)
 		palette[i] = screen_rgb(s, i);

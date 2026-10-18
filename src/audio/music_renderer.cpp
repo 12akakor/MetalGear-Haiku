@@ -120,6 +120,7 @@ MusicRenderer::MusicRenderer()
 	memcpy(songGain, kSongGain, sizeof(songGain));
 	memcpy(drumKey, kDefaultDrums, sizeof(drumKey));
 	memset(fLastId, 0, sizeof(fLastId));
+	memset(fResume, 0, sizeof(fResume));
 	for (int i = 0; i < 16; i++)
 		fProgram[i] = -1;
 }
@@ -241,10 +242,13 @@ MusicRenderer::NoteStart(int area, int note, int octave, int instrument)
 	if (fFont == NULL || area < 0 || area >= kAreas)
 		return;
 	uint8_t id = field(area, ID);
+	if (id != fLastId[area])
+		fLastId[area] = id;		/* new music: Tick() must not stop this note */
 	if (!IsMusic(id))
 		return;
 	int song = (id - 0x29) / 3;
 	_StopVoice(area);
+	fResume[area] = false;
 
 	if (instrument == 0) {
 		int period = sound_data((uint16_t)(kNoteFrequency + note)) << octave;
@@ -287,9 +291,12 @@ MusicRenderer::Tick()
 	for (int a = 0; a < kAreas; a++) {
 		uint8_t id = field(a, ID);
 		if (id != fLastId[a]) {
-			/* Other music or a sound effect in this channel. */
+			/* Other music or a sound effect in this channel; when the music
+			   comes back (after a pause or the radio), the note that was
+			   playing is started again. */
 			_StopVoice(a);
 			fLastId[a] = id;
+			fResume[a] = true;
 		}
 		if (!IsMusic(id))
 			continue;
@@ -304,12 +311,23 @@ MusicRenderer::Tick()
 			? ram(kVolumeFadeVal) : 0;
 		if (ram(kMuteSoundFlag) != 0) {
 			_StopVoice(a);
+			fResume[a] = true;
 			continue;
 		}
 
+		if (v.channel < 0 && fResume[a]) {
+			fResume[a] = false;
+			int period = field(a, FREQ_LOW) | (field(a, FREQ_HIGH) << 8);
+			if (field(a, INSTRUMENT) == 0 && field(a, VOLUME) != 0 && period != 0) {
+				double key = exact_key(period);
+				_StartTone(a, song, key, key);
+			}
+		}
+
 		if (v.channel < 0 || !v.tone) {
-			/* Bass instrument: ends with its data. */
-			if (v.channel >= 0 && field(a, INSTRUMENT) == 0 && field(a, VOLUME) == 0)
+			/* Bass instrument: ends with its data (MuteChannel clears the
+			   configuration and the volume, not the instrument). */
+			if (v.channel >= 0 && field(a, CONFIG) == 0 && field(a, VOLUME) == 0)
 				_StopVoice(a);
 			if (v.channel >= 0) {
 				float level = bassVolume * songGain[song] * amplitude(15 - fade);

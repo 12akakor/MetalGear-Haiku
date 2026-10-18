@@ -8,11 +8,22 @@ namespace {
 
 const double kClock = 1789772.5;
 
-float
+/* 3 dB per step, 0 is silent. */
+struct AmplitudeTable {
+	float level[16];
+	AmplitudeTable()
+	{
+		level[0] = 0.0f;
+		for (int v = 1; v < 16; v++)
+			level[v] = (float)pow(2.0, (v - 15) / 2.0);
+	}
+};
+const AmplitudeTable kAmplitude;
+
+inline float
 volume_amplitude(int v)
 {
-	/* 3 dB per step, 0 is silent. */
-	return v <= 0 ? 0.0f : (float)pow(2.0, (v - 15) / 2.0);
+	return kAmplitude.level[v & 15];
 }
 
 inline double

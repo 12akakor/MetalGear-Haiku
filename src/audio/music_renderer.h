@@ -79,6 +79,7 @@ private:
 			int			fRate;
 			Voice		fVoice[kAreas];
 			uint8_t		fLastId[kAreas];
+			bool		fResume[kAreas];
 			int			fProgram[16];
 			std::vector<float> fBuffer;
 			Reverb		fReverb;
