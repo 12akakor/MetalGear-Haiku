@@ -61,8 +61,17 @@ in the same folder for the enhanced music; without it the original sound is
 used. Instruments per music are in `music.cfg` there (written on first run).
 
 Keys: arrows, space (fire), M or N (second button), F1-F5 and Return as on
-the MSX. F8 music classic/enhanced, F9 timing, F10 filter, F11 full screen,
-F12 screenshot.
+the MSX. Port keys (as in the Maze of Galious port where the game allows;
+Metal Gear uses F1-F5 itself):
+
+| Key | Function |
+|---|---|
+| F7 | Next filter (xBR, nearest, sharp) |
+| F8 | Show or hide the timing display |
+| F9 | Screenshot (PNG in the home folder) |
+| F10 | Music: enhanced or original sound |
+| F11 | Full screen on or off |
+| F12 or Alt+Q | Quit |
 
 ## Building the ROM (needed for everything)
 
