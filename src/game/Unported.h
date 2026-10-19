@@ -9,11 +9,19 @@
 // Routines without arguments that are not rewritten yet (Unported.cpp).
 
 void		DrawOpenPitfalls();
-void		ExitRadio();
 void		IntroSceneLogic();
 void		ChkSaveGameStatus();
 void		SetMaxAmmoVals();
 void		LimitAmmo();
+void		CompactWeapons();
+void		DrawDoors();
+void		DrawRoomItems();
+void		DrawLaserBeams();
+void		ChkDrawMetalGear();
+void		DrawMines();
+void		ChkDrawHindD();
+void		DrawCameras();
+void		ChkDrawDestroyPS();
 
 
 #endif	// MG_UNPORTED_H

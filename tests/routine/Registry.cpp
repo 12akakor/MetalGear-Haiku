@@ -206,3 +206,19 @@ ROUTINE(GetTilePlayer, "hl") { out.hl = GetTilePlayer(); }
 ROUTINE(GetTileInXY, "hl") { out.hl = GetTileInXY(in.h, in.l); }
 ROUTINE(ChkGasRooms, "") { ChkGasRooms(); }
 ROUTINE(DecrementLife_C, "") { DecrementLife_C(in.c); }
+
+// Screens.cpp
+#include "../../src/game/Screens.h"
+
+ROUTINE(RadioLogic, "") { RadioLogic(); }
+ROUTINE(DrawRadioFreq, "") { DrawRadioFreq(); }
+ROUTINE(DrawRadioLeds, "") { DrawRadioLeds(); }
+ROUTINE(ChkRadioReply, "cf") { SetCarry(out, ChkRadioReply(in.hl)); }
+ROUTINE(MenuWeapon, "") { MenuWeapon(); }
+ROUTINE(GetWeaponCursor, "") { GetWeaponCursor(); }
+ROUTINE(GetMenuCursor, "") { GetMenuCursor(in.hl, in.b, in.de); }
+ROUTINE(EraseArrow, "") { EraseArrow(); }
+ROUTINE(DrawArrow, "") { DrawArrow(); }
+ROUTINE(CopyPalToRAM, "") { CopyPalToRAM(); }
+ROUTINE(FadeOutLogic, "cf") { SetCarry(out, FadeOutLogic()); }
+ROUTINE(FadeOutColors, "") { FadeOutColors(); }
