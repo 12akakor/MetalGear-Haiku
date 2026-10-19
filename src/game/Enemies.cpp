@@ -10,6 +10,7 @@
 #include "Actors.h"
 
 #include "Common.h"
+#include "Items.h"
 #include "GameMain.h"
 #include "GfxBasic.h"
 #include "Player.h"

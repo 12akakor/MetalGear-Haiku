@@ -200,7 +200,6 @@ void		BigExplosionLogic(uint16_t ix);
 void		FlameOutScreen(uint16_t ix);
 void		RemoveHindD(uint16_t ix);
 void		RemoveMetalGear(uint16_t ix);
-void		SpawnItem(uint8_t item, uint8_t y, uint8_t x);
 
 
 #endif	// MG_ACTORS_H

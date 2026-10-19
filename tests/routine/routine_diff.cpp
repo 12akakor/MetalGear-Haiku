@@ -21,6 +21,7 @@
  * neighbour of a random room and refill the life, to see more of the game.
  * -gear: all weapons and items, and the menus are opened now and then.
  * -doors: now and then a closed door of the room starts opening.
+ * -items: now and then an item appears under Snake.
  * -max: checks per routine (default 300).
  */
 #include "RoutineDiff.h"
@@ -298,6 +299,7 @@ main(int argc, char** argv)
 	bool play = false;
 	bool gear = false;
 	bool doors = false;
+	bool items = false;
 	long warp = 0;
 	unsigned seed = 1;
 	std::vector<std::string> only;
@@ -308,6 +310,8 @@ main(int argc, char** argv)
 			gear = true;
 		else if (!strcmp(argv[i], "-doors"))
 			doors = true;
+		else if (!strcmp(argv[i], "-items"))
+			items = true;
 		else if (!strcmp(argv[i], "-warp") && i + 1 < argc)
 			warp = atol(argv[++i]);
 		else if (!strcmp(argv[i], "-seed") && i + 1 < argc)
@@ -454,6 +458,23 @@ main(int argc, char** argv)
 						ram[var::OpenDoorStatus - 0xc000] = 0;
 						ram[var::GameMode - 0xc000] = 0x07;	// GAME_MODE_OPEN_DOOR
 					}
+				}
+			}
+			// -items: now and then an item appears under Snake
+			if (items && f % 40 == 0 && ram[var::GameStatus - 0xc000] == 5
+				&& ram[var::GameMode - 0xc000] == 0 && rand() % 3 == 0) {
+				for (int i = 0; i < 3; i++) {
+					uint8_t* p = ram + var::ItemsInTheRoom - 0xc000 + i * 0x10;
+					if (p[0] != 0)
+						continue;
+					static const uint8_t kIds[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0x10, 0x16,
+						0x1e, 0x1e, 0x23, 0x23, 0x22 };
+					p[0] = kIds[rand() % 16];
+					p[1] = static_cast<uint8_t>(rand() & 1);
+					p[2] = static_cast<uint8_t>(ram[var::PlayerY - 0xc000] - 8);
+					p[3] = static_cast<uint8_t>(ram[var::PlayerX - 0xc000] - 8);
+					p[4] = static_cast<uint8_t>(rand() & 1);
+					break;
 				}
 			}
 			// Text windows: RETURN now and then

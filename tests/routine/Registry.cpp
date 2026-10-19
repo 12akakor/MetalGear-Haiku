@@ -268,3 +268,13 @@ ROUTINE(DrawDoors, "") { DrawDoors(); }
 ROUTINE(ChkDoors, "") { ChkDoors(); }
 ROUTINE(ChkOpenDoor, "cf") { SetCarry(out, ChkOpenDoor(in.hl)); }
 ROUTINE(EraseDoorLogic, "") { EraseDoorLogic(); }
+
+#include "../../src/game/Items.h"
+ROUTINE(AddRoomItems, "") { AddRoomItems(); }
+ROUTINE(DrawRoomItems, "") { DrawRoomItems(); }
+ROUTINE(SpawnItem, "") { SpawnItem(in.a, in.e, in.d); }
+ROUTINE(ChkTakeItems, "") { ChkTakeItems(); }
+ROUTINE(LimitAmmo, "") { LimitAmmo(); }
+ROUTINE(SetMaxAmmoVals, "") { SetMaxAmmoVals(); }
+ROUTINE(CompactWeapons, "") { CompactWeapons(); }
+ROUTINE(CompactEquipment, "") { CompactEquipment(); }

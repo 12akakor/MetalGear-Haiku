@@ -16,6 +16,7 @@
 #include "GameMain.h"
 #include "GfxBasic.h"
 #include "Hud.h"
+#include "Items.h"
 #include "Input.h"
 #include "NextRoom.h"
 #include "Player.h"

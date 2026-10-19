@@ -13,10 +13,6 @@
 void		DrawOpenPitfalls();
 void		IntroSceneLogic();
 void		ChkSaveGameStatus();
-void		SetMaxAmmoVals();
-void		LimitAmmo();
-void		CompactWeapons();
-void		DrawRoomItems();
 void		DrawLaserBeams();
 void		ChkDrawMetalGear();
 void		DrawMines();
@@ -36,7 +32,6 @@ void		EndingLogic();
 void		RestoreGameStat();
 void		ChkLorryMov();
 void		ChkMadnarMsx();
-void		AddRoomItems();
 void		SetElevatorSpr();
 void		SetPlayerShotSpr();
 void		ChkIncomingCall();

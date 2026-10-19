@@ -14,6 +14,7 @@
 #include "GameMain.h"
 #include "GfxBasic.h"
 #include "Hud.h"
+#include "Items.h"
 #include "RoomGfx.h"
 #include "Rom.h"
 #include "Sprites.h"
