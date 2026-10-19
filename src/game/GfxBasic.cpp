@@ -329,14 +329,14 @@ DrawChar(uint8_t c, uint8_t color, uint8_t x, uint8_t y)
 
 
 // PrintText: text from 'text' at x, y (#FE x y: new position, #FF: end);
-// c = 0 erases. Returns the position after the text.
-void
+// c = 0 erases. Returns the address after the text (as HL).
+uint16_t
 PrintText(uint16_t text, uint8_t x, uint8_t y, uint8_t c)
 {
 	for (;;) {
 		uint8_t ch = Rom(text++);
 		if (ch == 0xff)
-			return;
+			return text;
 		if (ch == 0xfe) {
 			x = Rom(text++);
 			y = Rom(text++);
@@ -348,26 +348,26 @@ PrintText(uint16_t text, uint8_t x, uint8_t y, uint8_t c)
 }
 
 
-static void
+static uint16_t
 PrintText(uint16_t text, uint8_t color)
 {
 	uint8_t x = Rom(text++);
 	uint8_t y = Rom(text++);
-	PrintText(text, x, y, color);
+	return PrintText(text, x, y, color);
 }
 
 
-void
+uint16_t
 PrintTextXY(uint16_t text)
 {
-	PrintText(text, 0xff);
+	return PrintText(text, 0xff);
 }
 
 
-void
+uint16_t
 EraseTextXY(uint16_t text)
 {
-	PrintText(text, 0);
+	return PrintText(text, 0);
 }
 
 

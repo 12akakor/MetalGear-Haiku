@@ -7,6 +7,7 @@
 // Start up, tick and game status logic, rewritten from Banks0123.asm.
 #include "GameMain.h"
 
+#include "Game.h"
 #include "GfxBasic.h"
 #include "Input.h"
 #include "Rom.h"
@@ -239,9 +240,30 @@ GameStatusLogic()
 		case 1:
 			GS_WaitMenu();
 			break;
+		case 2:
+			GS_DemoPlay(substatus);
+			break;
+		case 3:
+			GS_PlayStart(substatus);
+			break;
+		case 4:
+			GS_StartGame();
+			break;
+		case 5:
+			GS_Playing();
+			break;
+		case 6:
+			GS_GameOver(substatus);
+			break;
+		case 7:
+			GS_Pause();
+			break;
+		case 8:
+			GS_Ending(substatus);
+			break;
 		default:
 			if (gUnported == NULL)
-				gUnported = "game status 2 and higher (demo, game)";
+				gUnported = "bad game status";
 			return;
 	}
 	if (status < 3)

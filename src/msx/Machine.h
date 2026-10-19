@@ -50,6 +50,8 @@ public:
 			void			SetKey(int row, int bit, bool down);
 	// Joystick port 1: bits 0..5 = up, down, left, right, A, B.
 			void			SetJoystick(uint8_t bits) { fJoystick = bits; }
+			uint8_t			KeyRow(int row) const { return fKeys[row]; }
+			uint8_t			Joystick() const { return fJoystick; }
 
 	// Tape for TAPION/TAPIN/TAPOON/TAPOUT (NULL: no cassette, errors), and
 	// the characters CHGET returns (empty: RETURN).

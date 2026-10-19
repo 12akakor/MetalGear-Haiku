@@ -35,6 +35,7 @@
 #include "../../src/game/Common.h"
 #include "../../src/game/GameData.h"
 #include "../../src/game/GameRam.h"
+#include "../../src/game/Input.h"
 #include "../../src/game/RamSymbols.h"
 #include "../../src/game/Random.h"
 #include "../../src/game/Rom.h"
@@ -81,6 +82,9 @@ CopyToNative(const Machine& m)
 			static_cast<uint8_t>((p[i] >> 8) & 7));
 	for (int i = 0; i < 24; i++)
 		gScreen.LoadRegister(i, machine.GetVdp().Register(i));
+	for (int r = 0; r < 11; r++)
+		gKeyMatrix[r] = machine.KeyRow(r);
+	gJoystick = static_cast<uint8_t>(~machine.Joystick() & 0x3f);
 }
 
 

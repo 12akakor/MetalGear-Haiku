@@ -27,6 +27,37 @@ void		SetBulldozerKO();
 void		RestLasersBack();
 // Mine background: returns DE (destination), *sx.
 uint16_t	GetMineBackXY(uint8_t x, uint8_t y, uint8_t* sx);
+void		SetupDemoPlay();
+void		DemoControler();
+void		GameDemoLogic();
+void		ChkPasswords();
+void		ChkCharTyped();
+void		EndingSetup();
+void		EndingLogic();
+void		SwapSprBuffer();
+void		UpdateSpritesShuf();
+void		UpdateSprites();
+void		RestoreGameStat();
+void		SetNextRoom();
+void		LocatePlayerEntry();
+void		ChkLorryMov();
+void		ChkMadnarMsx();
+void		AddRoomItems();
+void		SetHUDSprMask();
+void		SetElevatorSpr();
+void		SetPlayerShotSpr();
+void		ChkIncomingCall();
+void		DecNukeTimer();
+void		ChkWeaponShot();
+void		PlayerShotsLogic();
+void		CommonLogic();
+void		MenuEquip();
+void		LorryMoving();
+void		ElevatorRoomLogic();
+void		EraseDoorLogic();
+void		SetBinoTargetSpr();
+void		CaptureSceneLogic();
+void		chkMadnarLate();
 
 
 #endif	// MG_UNPORTED_H

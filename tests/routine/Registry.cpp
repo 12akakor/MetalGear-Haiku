@@ -237,3 +237,19 @@ ROUTINE(KillActor, "") { KillActor(in.ix); }
 ROUTINE(BulletLogic, "") { BulletLogic(in.ix); }
 ROUTINE(EraseBitmapActor, "") { EraseBitmapActor(in.ix); }
 ROUTINE(ChkDrawDestroyPS, "") { ChkDrawDestroyPS(in.ix); }
+
+// Game.cpp
+#include "../../src/game/Game.h"
+
+ROUTINE(GS_PlayStart, "") { GS_PlayStart(in.b); }
+ROUTINE(GS_StartGame, "") { GS_StartGame(); }
+ROUTINE(GS_Playing, "") { GS_Playing(); }
+ROUTINE(GS_GameOver, "") { GS_GameOver(in.b); }
+ROUTINE(GS_DemoPlay, "") { GS_DemoPlay(in.b); }
+ROUTINE(PrintPause, "") { PrintPause(); }
+ROUTINE(UpdateControls, "") { UpdateControls(); }
+ROUTINE(ClearGameVars, "") { ClearGameVars(); }
+ROUTINE(InitGame, "") { InitGame(); }
+ROUTINE(NextRoomLogic, "") { NextRoomLogic(); }
+ROUTINE(GameLogic, "") { GameLogic(); }
+ROUTINE(BinocularLogic, "") { BinocularLogic(); }

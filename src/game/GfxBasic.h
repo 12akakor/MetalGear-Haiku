@@ -65,10 +65,10 @@ void		DrawTile_P1(uint8_t tile, uint8_t dx, uint8_t dy);
 void		DrawTileList(uint16_t data, uint8_t x, uint8_t y);
 void		DrawChar(uint8_t c, uint8_t color, uint8_t x, uint8_t y);
 // Text: XY, characters, #FE XY, ... #FF. 'erase' draws blanks.
-void		PrintTextXY(uint16_t text);
+uint16_t	PrintTextXY(uint16_t text);
 // Text at x, y; c = 0 erases (as the original's register C).
-void		PrintText(uint16_t text, uint8_t x, uint8_t y, uint8_t c);
-void		EraseTextXY(uint16_t text);
+uint16_t	PrintText(uint16_t text, uint8_t x, uint8_t y, uint8_t c);
+uint16_t	EraseTextXY(uint16_t text);
 void		Decode1bppTile(uint16_t source, uint8_t color);
 void		Load1bppTile(uint16_t source, uint8_t x, uint8_t y, uint8_t color);
 // Returns the source after the data; x, y advanced.

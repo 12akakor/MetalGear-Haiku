@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#include "Game.h"
 #include "GameMain.h"
 #include "GfxBasic.h"
 #include "Input.h"
@@ -26,11 +27,11 @@ static const int kNameSize = 6;
 static const int kSyncBytes = 10;
 
 
-// Not rewritten yet (Banks0123.asm: InitGame4).
 static void
 InitGameArea()
 {
-	gUnported = "InitGameArea";
+	InitGame4();
+	SetBanks_1_2_X();
 }
 
 
