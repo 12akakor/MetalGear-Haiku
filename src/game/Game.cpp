@@ -10,8 +10,11 @@
 #include "Game.h"
 
 #include "Actors.h"
+#include "Checkpoints.h"
 #include "Common.h"
 #include "Contact.h"
+#include "Demo.h"
+#include "Events.h"
 #include "Doors.h"
 #include "GameGfx.h"
 #include "GameMain.h"

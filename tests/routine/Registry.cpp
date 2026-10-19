@@ -293,3 +293,18 @@ ROUTINE(ChkOnBridge, "") { ChkOnBridge(); }
 ROUTINE(ChkElectricFloor, "") { ChkElectricFloor(); }
 ROUTINE(ChkIncomingCall, "") { ChkIncomingCall(); }
 ROUTINE(DecNukeTimer, "") { DecNukeTimer(); }
+
+#include "../../src/game/Demo.h"
+ROUTINE(SetupDemoPlay, "") { SetupDemoPlay(); }
+ROUTINE(GameDemoLogic, "") { GameDemoLogic(); }
+ROUTINE(DemoControler, "") { DemoControler(); }
+
+#include "../../src/game/Checkpoints.h"
+ROUTINE(ChkSaveGameStatus, "") { ChkSaveGameStatus(); }
+ROUTINE(RestoreGameStat, "") { RestoreGameStat(); }
+
+#include "../../src/game/Events.h"
+ROUTINE(ChkLorryMov, "") { ChkLorryMov(); }
+ROUTINE(LorryMoving, "") { LorryMoving(); }
+ROUTINE(ChkMadnarMsx, "") { ChkMadnarMsx(); }
+ROUTINE(chkMadnarLate, "") { chkMadnarLate(); }

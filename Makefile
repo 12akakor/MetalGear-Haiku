@@ -8,7 +8,7 @@ GAME = src/game/GameData.cpp src/game/Rom.cpp src/game/RomSymbols.cpp \
 	src/game/Screen.cpp src/game/ScreenRender.cpp src/game/GfxBasic.cpp \
 	src/game/RoomGfx.cpp src/game/SoundDriver.cpp src/game/Input.cpp \
 	src/game/GameMain.cpp src/game/Title.cpp src/game/CasTape.cpp \
-	src/game/SaveLoad.cpp src/game/Common.cpp src/game/Hud.cpp src/game/GameGfx.cpp src/game/Sprites.cpp src/game/Random.cpp src/game/Actors.cpp src/game/Text.cpp src/game/Player.cpp src/game/Screens.cpp src/game/Enemies.cpp src/game/Game.cpp src/game/NextRoom.cpp src/game/Doors.cpp src/game/Items.cpp src/game/Weapons.cpp src/game/Contact.cpp src/game/Unported.cpp
+	src/game/SaveLoad.cpp src/game/Common.cpp src/game/Hud.cpp src/game/GameGfx.cpp src/game/Sprites.cpp src/game/Random.cpp src/game/Actors.cpp src/game/Text.cpp src/game/Player.cpp src/game/Screens.cpp src/game/Enemies.cpp src/game/Game.cpp src/game/NextRoom.cpp src/game/Doors.cpp src/game/Items.cpp src/game/Weapons.cpp src/game/Contact.cpp src/game/Demo.cpp src/game/Checkpoints.cpp src/game/Events.cpp src/game/Unported.cpp
 AUDIO = src/audio/GameAudio.cpp src/audio/MusicRenderer.cpp \
 	src/audio/Reverb.cpp src/audio/ToneSynth.cpp
 PLATFORM = src/platform/PlatformHaiku.cpp src/platform/PlatformCommon.cpp \

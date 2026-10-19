@@ -9,6 +9,7 @@
 #include "Player.h"
 
 #include "Actors.h"
+#include "Checkpoints.h"
 #include "Common.h"
 #include "GameGfx.h"
 #include "GameMain.h"

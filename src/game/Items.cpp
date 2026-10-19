@@ -168,7 +168,8 @@ SpawnItem(uint8_t drop, uint8_t y, uint8_t x)
 	uint16_t entry = AddRoomItems2(SpawnItemData, ItemsInTheRoom);
 	Ram(Add16(entry, -0x0c)) = amount;
 	DrawRoomItems2(ItemsInTheRoom, 1, 0);
-	SetSoundEntry(0x25);
+	SetSoundEntryChk(0x25);
+	SetBanks_1_2_X();
 }
 
 

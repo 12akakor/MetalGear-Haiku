@@ -50,7 +50,7 @@ NextRadioStat()
 }
 
 
-static void
+void
 DrawRadio()
 {
 	DisableScreen();
@@ -154,7 +154,7 @@ RadioIdle()
 }
 
 
-static void
+void
 RadioSignalUp()
 {
 	if (--Ram(RadioLedDelay) != 0)

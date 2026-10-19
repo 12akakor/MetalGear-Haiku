@@ -13,6 +13,8 @@
 
 
 void		RadioLogic();
+void		DrawRadio();
+void		RadioSignalUp();
 void		DrawRadioFreq();
 void		DrawRadioLeds();
 void		ExitRadio();

@@ -36,6 +36,7 @@
 #include "../RomBanks.h"
 #include "../../src/game/Common.h"
 #include "../../src/game/GameData.h"
+#include "../../src/game/GameMain.h"
 #include "../../src/game/GameRam.h"
 #include "../../src/game/Input.h"
 #include "../../src/game/RamSymbols.h"
@@ -217,6 +218,7 @@ Check(Entry& entry)
 	CopyToNative(sMain);
 	Z80Regs out = in;
 	size_t used = 0;
+	gUnported = NULL;
 	gRefreshHook = [&]() -> uint8_t {
 		return used < refresh.size() ? refresh[used++] : (used++, 0);
 	};
@@ -233,6 +235,8 @@ Check(Entry& entry)
 	}
 	if (report.empty())
 		return;
+	if (gUnported != NULL)
+		report = std::string(" [reaches ") + gUnported + "]" + report;
 	entry.failures++;
 	sTotalFailures++;
 	if (entry.failures <= 5) {
