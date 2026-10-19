@@ -70,3 +70,11 @@ UNPORTED(InitBoomerang)
 UNPORTED(InitSnoringSymbol)
 UNPORTED(DismissActor)
 UNPORTED(AnimateGuard2)
+
+#include "Unported.h"
+
+#define UNPORTED0(name) \
+	void name() { if (gUnported == NULL) gUnported = #name; }
+
+UNPORTED0(DrawOpenPitfalls)
+UNPORTED0(ExitRadio)

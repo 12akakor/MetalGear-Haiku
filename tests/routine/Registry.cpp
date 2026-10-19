@@ -161,3 +161,16 @@ ROUTINE(CalcShot2, "de,hl") { out.de = CalcShot2(in.ix, in.a, &out.hl); }
 ROUTINE(CalcQuadrantDegree, "") { CalcQuadrantDegree(in.d, in.e); }
 ROUTINE(CalShootSpeed, "de") { out.de = CalShootSpeed(in.e); }
 ROUTINE(InitLaserRoom, "") { InitLaserRoom(in.ix); }
+
+// Text.cpp
+#include "../../src/game/Text.h"
+
+ROUTINE(SetText, "") { SetText(in.a); }
+ROUTINE(SetTextUnskip2, "") { SetTextUnskip2(in.a); }
+ROUTINE(SetTextUnskippable, "") { SetTextUnskippable(in.a); }
+ROUTINE(TextBoxLogic, "") { TextBoxLogic(); }
+ROUTINE(GetText, "a") { out.a = GetText(); }
+ROUTINE(DecodeText, "a,hl,de") { out.a = DecodeText(&out.hl, &out.de); }
+ROUTINE(DrawTextBoxIn, "cf") { SetCarry(out, DrawTextBoxIn()); }
+ROUTINE(TextBoxExit, "") { TextBoxExit(); }
+ROUTINE(GetTextBoxXYSize, "de,bc") { GetTextBoxXYSize(&out.de, &out.bc); }

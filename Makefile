@@ -8,7 +8,7 @@ GAME = src/game/GameData.cpp src/game/Rom.cpp src/game/RomSymbols.cpp \
 	src/game/Screen.cpp src/game/ScreenRender.cpp src/game/GfxBasic.cpp \
 	src/game/RoomGfx.cpp src/game/SoundDriver.cpp src/game/Input.cpp \
 	src/game/GameMain.cpp src/game/Title.cpp src/game/CasTape.cpp \
-	src/game/SaveLoad.cpp src/game/Common.cpp src/game/Hud.cpp src/game/GameGfx.cpp src/game/Sprites.cpp src/game/Random.cpp src/game/Actors.cpp src/game/Unported.cpp
+	src/game/SaveLoad.cpp src/game/Common.cpp src/game/Hud.cpp src/game/GameGfx.cpp src/game/Sprites.cpp src/game/Random.cpp src/game/Actors.cpp src/game/Text.cpp src/game/Unported.cpp
 AUDIO = src/audio/GameAudio.cpp src/audio/MusicRenderer.cpp \
 	src/audio/Reverb.cpp src/audio/ToneSynth.cpp
 PLATFORM = src/platform/PlatformHaiku.cpp src/platform/PlatformCommon.cpp \
