@@ -7,6 +7,7 @@
 // Rewritten from Banks0123.asm (RadioLogic .. FadeOutColors).
 #include "Screens.h"
 
+#include "Actors.h"
 #include "Common.h"
 #include "GameGfx.h"
 #include "GameMain.h"
@@ -407,7 +408,7 @@ RenderScreen()
 	ChkDrawHindD();
 	DrawOpenPitfalls();
 	DrawCameras();
-	ChkDrawDestroyPS();
+	ChkDrawDestroyPS(EnemyList + 0x800);	// IX after DrawCameras (to check)
 	RenderHUD();
 	EnableScreen();
 }

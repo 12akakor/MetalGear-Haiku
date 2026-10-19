@@ -5,6 +5,8 @@
 #ifndef MG_UNPORTED_H
 #define MG_UNPORTED_H
 
+#include <stdint.h>
+
 
 // Routines without arguments that are not rewritten yet (Unported.cpp).
 
@@ -21,7 +23,10 @@ void		ChkDrawMetalGear();
 void		DrawMines();
 void		ChkDrawHindD();
 void		DrawCameras();
-void		ChkDrawDestroyPS();
+void		SetBulldozerKO();
+void		RestLasersBack();
+// Mine background: returns DE (destination), *sx.
+uint16_t	GetMineBackXY(uint8_t x, uint8_t y, uint8_t* sx);
 
 
 #endif	// MG_UNPORTED_H

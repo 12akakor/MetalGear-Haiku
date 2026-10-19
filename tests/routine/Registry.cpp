@@ -222,3 +222,18 @@ ROUTINE(DrawArrow, "") { DrawArrow(); }
 ROUTINE(CopyPalToRAM, "") { CopyPalToRAM(); }
 ROUTINE(FadeOutLogic, "cf") { SetCarry(out, FadeOutLogic()); }
 ROUTINE(FadeOutColors, "") { FadeOutColors(); }
+
+// Enemies.cpp
+ROUTINE(EnemiesLogic, "") { EnemiesLogic(); }
+ROUTINE(RunEnemyLogic, "") { RunEnemyLogic(in.ix); }
+ROUTINE(ChkEraseAlertSign, "") { ChkEraseAlertSign(); }
+ROUTINE(StunnedBounce, "") { StunnedBounce(in.ix); }
+ROUTINE(MoveActor, "") { MoveActor(in.ix); }
+ROUTINE(ChkActorExitRoom, "") { ChkActorExitRoom(in.ix); }
+ROUTINE(DismissActor, "") { DismissActor(in.ix); }
+ROUTINE(RemoveActor_, "") { RemoveActor_(in.ix); }
+ROUTINE(UpdateEnemySprStr, "") { UpdateEnemySprStr(); }
+ROUTINE(KillActor, "") { KillActor(in.ix); }
+ROUTINE(BulletLogic, "") { BulletLogic(in.ix); }
+ROUTINE(EraseBitmapActor, "") { EraseBitmapActor(in.ix); }
+ROUTINE(ChkDrawDestroyPS, "") { ChkDrawDestroyPS(in.ix); }
