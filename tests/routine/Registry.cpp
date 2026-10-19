@@ -114,3 +114,50 @@ ROUTINE(SetSnakePal, "") { SetSnakePal(); }
 ROUTINE(SetRadioPal, "") { SetRadioPal(); }
 ROUTINE(SetSprPal, "") { SetSprPal(); }
 ROUTINE(UpdateRadio, "") { UpdateRadio(); }
+
+// Sprites.cpp
+#include "../../src/game/Sprites.h"
+
+ROUTINE(SetSnakeSprAtt, "") { SetSnakeSprAtt(); }
+ROUTINE(SetSnakeSprCol, "") { SetSnakeSprCol(); }
+ROUTINE(SetSnakeSprPatt, "") { SetSnakeSprPatt(); }
+ROUTINE(UpdateSnakeSpr, "") { UpdateSnakeSpr(); }
+ROUTINE(SetShotSpr, "") { SetShotSpr(in.ix); }
+ROUTINE(UpdateActorSprDat, "") { UpdateActorSprDat(in.ix); }
+ROUTINE(UpdateEnemySprRAM, "") { UpdateEnemySprRAM(); }
+ROUTINE(HideEnemySprs, "") { HideEnemySprs(); }
+ROUTINE(SetSpritesFree, "") { SetSpritesFree(in.hl, in.b); }
+ROUTINE(SetActorSprCols, "") { SetActorSprCols(in.ix, in.de); }
+ROUTINE(SetSpriteLayer, "") { SetSpriteLayer(in.d, in.e); }
+ROUTINE(HideSprColor, "") { HideSprColor(in.ix); }
+ROUTINE(SetSprColor, "") { SetSprColor(in.ix, in.a, in.c); }
+ROUTINE(EraseSprAttRAM, "") { EraseSprAttRAM(); }
+ROUTINE(LoadSprMissilRocket, "") { LoadSprMissilRocket(in.ix, in.de); }
+ROUTINE(LoadSprTarget, "") { LoadSprTarget(); }
+ROUTINE(VRAMtoRAM, "") { VRAMtoRAM(in.hl, in.de, in.bc); }
+ROUTINE(WriteVRAM, "") { WriteVRAM(in.hl, in.a); }
+
+// Actors.cpp
+#include "../../src/game/Actors.h"
+
+ROUTINE(CountEnemyType, "a") { out.a = CountEnemyType(in.a); }
+ROUTINE(ChkRespawnEnemy, "") { ChkRespawnEnemy(); }
+ROUTINE(ChkAlarmEnd, "") { ChkAlarmEnd(); }
+ROUTINE(StopAlert, "") { StopAlert(); }
+ROUTINE(GetPathPoints, "") { GetPathPoints(in.ix, in.b); }
+ROUTINE(GetPathPoint, "") { GetPathPoint(in.ix, in.de); }
+ROUTINE(SetDirToPoint, "") { SetDirToPoint(in.ix); }
+ROUTINE(GetSentinelLookDirs, "") { GetSentinelLookDirs(in.ix); }
+ROUTINE(SetActorSpeed, "") { SetActorSpeed(in.ix, in.de, in.hl); }
+ROUTINE(AddActorSpeedX, "de") { out.de = AddActorSpeedX(in.ix, in.de); }
+ROUTINE(Anim2FramesActor, "") { Anim2FramesActor(in.ix, in.b); }
+ROUTINE(AnimZzzSign, "") { AnimZzzSign(in.ix, in.b, in.c); }
+ROUTINE(ChangeGuardSprDir, "") { ChangeGuardSprDir(in.ix); }
+ROUTINE(GetDirToPlayer, "a,b") { out.a = GetDirToPlayer(in.ix, &out.b); }
+ROUTINE(GetSinCos, "b,c") { GetSinCos(in.a, &out.c, &out.b); }
+ROUTINE(GetFlameSinCos, "b,c") { GetFlameSinCos(in.ix, &out.c, &out.b); }
+ROUTINE(CalcShot, "de,hl") { out.de = CalcShot(in.ix, &out.hl); }
+ROUTINE(CalcShot2, "de,hl") { out.de = CalcShot2(in.ix, in.a, &out.hl); }
+ROUTINE(CalcQuadrantDegree, "") { CalcQuadrantDegree(in.d, in.e); }
+ROUTINE(CalShootSpeed, "de") { out.de = CalShootSpeed(in.e); }
+ROUTINE(InitLaserRoom, "") { InitLaserRoom(in.ix); }

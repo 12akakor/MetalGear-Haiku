@@ -36,6 +36,7 @@
 #include "../../src/game/GameData.h"
 #include "../../src/game/GameRam.h"
 #include "../../src/game/RamSymbols.h"
+#include "../../src/game/Random.h"
 #include "../../src/game/Rom.h"
 #include "../../src/game/Screen.h"
 #include "../../src/msx/Machine.h"
@@ -191,9 +192,13 @@ Check(Entry& entry)
 	r.iff1 = r.iff2 = false;
 	uint64_t time = sProbe.GetVdp().Time();
 	long guard = 0;
+	std::vector<uint8_t> refresh;	// values of LD A,R
 	while (!(r.pc == back && r.sp == static_cast<uint16_t>(sp + 2)) && ++guard < 20000000) {
+		bool ldAR = sProbe.Read(r.pc) == 0xed && sProbe.Read(static_cast<uint16_t>(r.pc + 1)) == 0x5f;
 		time += static_cast<uint64_t>(sProbe.StepInstruction());
 		sProbe.GetVdp().SetTime(time);
+		if (ldAR)
+			refresh.push_back(r.a);
 	}
 	sInProbe = false;
 	if (guard >= 20000000) {
@@ -205,11 +210,21 @@ Check(Entry& entry)
 	// The rewrite, from the state before.
 	CopyToNative(sMain);
 	Z80Regs out = in;
+	size_t used = 0;
+	gRefreshHook = [&]() -> uint8_t {
+		return used < refresh.size() ? refresh[used++] : (used++, 0);
+	};
 	entry.routine->native(in, out);
+	gRefreshHook = nullptr;
 
 	entry.checks++;
 	std::string report = CompareState(sProbe, sp)
 		+ CompareResults(entry.routine->results, r, out);
+	if (used != refresh.size()) {
+		char buf[80];
+		snprintf(buf, sizeof(buf), " LD A,R: original %zu, port %zu;", refresh.size(), used);
+		report += buf;
+	}
 	if (report.empty())
 		return;
 	entry.failures++;
