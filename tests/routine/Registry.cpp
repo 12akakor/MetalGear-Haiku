@@ -92,3 +92,25 @@ ROUTINE(SetDead, "") { SetDead(); }
 ROUTINE(DecItemUnits, "") { DecItemUnits(in.hl, in.c); }
 ROUTINE(DrawWeaponMenu, "") { DrawWeaponMenu(); }
 ROUTINE(DrawEquipMenu, "") { DrawEquipMenu(); }
+
+// GameGfx.cpp
+#include "../../src/game/GameGfx.h"
+
+ROUTINE(UnpackGfx1, "") { UnpackGfx1(in.hl, in.de); }
+ROUTINE(UnpackGfx, "") { UnpackGfx(in.de); }
+ROUTINE(LoadGfxDoors, "") { LoadGfxDoors(); }
+ROUTINE(LoadTilesGfxBlk, "hl") { out.hl = LoadTilesGfxBlk(in.hl, in.de, in.b, in.c); }
+ROUTINE(LoadRoomSpr, "") { LoadRoomSpr(); }
+ROUTINE(LoadSprProjectile, "") { LoadSprProjectile(); }
+ROUTINE(LoadGameGfx, "") { LoadGameGfx(); }
+ROUTINE(PrintTransceiv, "") { PrintTransceiv(); }
+ROUTINE(SetupPitfall, "") { SetupPitfall(in.hl, in.de, in.b); }
+ROUTINE(DrawPitfall, "") { DrawPitfall(); }
+ROUTINE(DrawPitfall_, "") { DrawPitfall_(); }
+ROUTINE(DrawPitfallTiles, "") { DrawPitfallTiles(in.hl, in.d, in.e); }
+ROUTINE(DrawPitfallTile, "") { DrawPitfallTile(in.a, in.d, in.e); }
+ROUTINE(SetMenuWeaponPal, "") { SetMenuWeaponPal(); }
+ROUTINE(SetSnakePal, "") { SetSnakePal(); }
+ROUTINE(SetRadioPal, "") { SetRadioPal(); }
+ROUTINE(SetSprPal, "") { SetSprPal(); }
+ROUTINE(UpdateRadio, "") { UpdateRadio(); }

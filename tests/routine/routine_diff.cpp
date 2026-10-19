@@ -215,9 +215,13 @@ Check(Entry& entry)
 	entry.failures++;
 	sTotalFailures++;
 	if (entry.failures <= 5) {
-		printf("FAIL %s (frame %llu, A=%02X BC=%04X DE=%04X HL=%04X IX=%04X):%s\n",
+		const uint8_t* ram = sMain.Ram();
+		printf("FAIL %s (frame %llu, A=%02X BC=%04X DE=%04X HL=%04X IX=%04X; banks %X %X %X,"
+			" variables %X %X %X; room %d):%s\n",
 			entry.routine->name, static_cast<unsigned long long>(sMain.Frames()), in.a,
-			in.bc, in.de, in.hl, in.ix, report.c_str());
+			in.bc, in.de, in.hl, in.ix, sMain.Bank(1), sMain.Bank(2), sMain.Bank(3),
+			ram[var::BankIn60 - 0xc000], ram[var::BankIn80 - 0xc000],
+			ram[var::BankInA0 - 0xc000], ram[var::Room - 0xc000], report.c_str());
 	}
 }
 
@@ -233,6 +237,9 @@ OnStep()
 	auto it = sByAddress.find(pc);
 	if (it == sByAddress.end())
 		return;
+	const uint8_t* ram = sMain.Ram();
+	if (ram[0] > 8 || (ram[0] == 5 && ram[var::Room - 0xc000] == 0xff))
+		return;	// the original went astray (see main)
 	int slot = pc >> 13;	// 2 = #4000, 3 = #6000, ...
 	for (Entry* e : it->second) {
 		if (e->bank >= 0 && slot >= 3 && slot <= 5 && sMain.Bank(slot - 2) != e->bank)
@@ -417,6 +424,13 @@ main(int argc, char** argv)
 				sMain.SetKey(7, 7, ram[var::GameMode - 0xc000] == 10 && f % 16 < 4);
 		}
 		sMain.RunFrame();
+		if (sMain.Ram()[0] > 8
+			|| (sMain.Ram()[0] == 5 && sMain.Ram()[var::Room - 0xc000] == 0xff)) {
+			// warps can leave Snake where the original never puts him
+			printf("the original went astray (game status %d, room %d) at frame %ld; "
+				"stopped\n", sMain.Ram()[0], sMain.Ram()[var::Room - 0xc000], f);
+			break;
+		}
 		if (getenv("MG_TRACE") != NULL && f % 300 == 0) {
 			uint8_t* ram = sMain.Ram();
 			printf("frame %ld: status %d,%d mode %d room %d life %d\n", f,

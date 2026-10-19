@@ -35,6 +35,7 @@ void		RAMtoVRAM(uint16_t source, uint32_t dest, int count);
 // Tiles (8x8 pixels, 32 bytes)
 void		SetTilesetColors();
 void		SetColorsIndexes(uint16_t colors);
+void		SetColorsIndexes2(uint16_t colors, uint8_t count);
 // Decode 3bpp tiles from 'source' to VRAM 'dest'; returns the source
 // pointer after the data; 'dest' is advanced as the original does.
 uint16_t	Load3bppTiles(uint16_t source, uint16_t* dest, int count);

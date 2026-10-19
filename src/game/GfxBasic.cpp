@@ -92,6 +92,14 @@ SetColorsIndexes(uint16_t colors)
 
 
 void
+SetColorsIndexes2(uint16_t colors, uint8_t count)
+{
+	for (int i = 0; i < count; i++)
+		Ram(static_cast<uint16_t>(var::BufferColor + i)) = Rom(static_cast<uint16_t>(colors + i));
+}
+
+
+void
 SetTilesetColors()
 {
 	SetColorsIndexes(SYM(ColorsTileset));
