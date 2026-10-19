@@ -253,3 +253,12 @@ ROUTINE(InitGame, "") { InitGame(); }
 ROUTINE(NextRoomLogic, "") { NextRoomLogic(); }
 ROUTINE(GameLogic, "") { GameLogic(); }
 ROUTINE(BinocularLogic, "") { BinocularLogic(); }
+ROUTINE(SwapSprBuffer, "") { SwapSprBuffer(); }
+ROUTINE(UpdateSpritesShuf, "") { UpdateSpritesShuf(); }
+ROUTINE(UpdateSprites, "") { UpdateSprites(); }
+ROUTINE(SetBinoTargetSpr, "") { SetBinoTargetSpr(); }
+ROUTINE(SetHUDSprMask, "") { SetHUDSprMask(); }
+
+#include "../../src/game/NextRoom.h"
+ROUTINE(SetNextRoom, "") { SetNextRoom(); }
+ROUTINE(LocatePlayerEntry, "") { LocatePlayerEntry(); }

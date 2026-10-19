@@ -361,3 +361,71 @@ WriteVRAM(uint16_t vram, uint8_t value)
 {
 	gScreen.Write(vram, value);
 }
+
+
+// logic/updatesprites.asm: two sprite tables in VRAM, switched every tick
+// (attributes #F600/#F200, colours #F400/#F000).
+void
+SwapSprBuffer()
+{
+	bool second = (Ram16(SprColAddress) & 0x0400) != 0;
+	SetRam16(SprAttAddress, second ? 0xf200 : 0xf600);
+	SetRam16(SprColAddress, second ? 0xf000 : 0xf400);
+	WRTVDP(5, second ? 0xef : 0xe7);
+}
+
+
+// Sprites in a rotating order, so that with more than 8 on a line each
+// one disappears only now and then.
+void
+UpdateSpritesShuf()
+{
+	uint8_t offset = static_cast<uint8_t>((Ram(SprShuffleOffset) + 0x68) & 0x78);
+	Ram(SprShuffleOffset) = offset;
+	uint32_t vram = Ram16(SprColAddress);
+	uint8_t a = static_cast<uint8_t>(offset * 2);
+	for (int i = 0; i < 16; i++) {
+		uint16_t hl = static_cast<uint16_t>((0x7400 | a) * 2);
+		for (int k = 0; k < 32; k++)
+			gScreen.Write(vram++, Ram(static_cast<uint16_t>(hl + k)));
+		a = static_cast<uint8_t>(a + 0x90);
+	}
+	a = offset;
+	for (int i = 0; i < 16; i++) {
+		uint16_t hl = static_cast<uint16_t>(0xea00 | a);
+		for (int k = 0; k < 8; k++)
+			gScreen.Write(vram++, Ram(static_cast<uint16_t>(hl + k)));
+		a = static_cast<uint8_t>((a + 0x48) & 0x78);
+	}
+}
+
+
+void
+UpdateSprites()
+{
+	RAMtoVRAM(SpritesColors, Ram16(SprColAddress), 0x280);
+}
+
+
+// Binoculars: the target sprites only.
+void
+SetBinoTargetSpr()
+{
+	RAMtoVRAM(BinocularSprCol, static_cast<uint16_t>(Ram16(SprColAddress) + 0x40), 0x1c0);
+	RAMtoVRAM(SprShootsAtt, static_cast<uint16_t>(Ram16(SprAttAddress) + 0x10), 0x70);
+}
+
+
+// logic/hudspritemask.asm: in the elevators 16 sprites over the HUD hide
+// the elevator's sprites there.
+void
+SetHUDSprMask()
+{
+	uint16_t de = SprAttRAM;
+	for (int i = 0; i < 8; i++) {
+		for (int k = 0; k < 8; k++)
+			Ram(de++) = Mem(static_cast<uint16_t>(SYM(MaskSprAttrib) + k));
+	}
+	for (int i = 0; i < 256; i++)
+		Ram(static_cast<uint16_t>(SpritesColors + i)) = 0x0f;
+}

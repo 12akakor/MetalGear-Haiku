@@ -35,5 +35,11 @@ void		LoadSprTarget();
 uint16_t	VRAMtoRAM(uint16_t vram, uint16_t ram, uint16_t count);
 void		WriteVRAM(uint16_t vram, uint8_t value);
 
+void		SwapSprBuffer();
+void		UpdateSpritesShuf();
+void		UpdateSprites();
+void		SetBinoTargetSpr();
+void		SetHUDSprMask();
+
 
 #endif	// MG_SPRITES_H

@@ -16,6 +16,7 @@
 #include "GfxBasic.h"
 #include "Hud.h"
 #include "Input.h"
+#include "NextRoom.h"
 #include "Player.h"
 #include "RoomGfx.h"
 #include "Rom.h"
