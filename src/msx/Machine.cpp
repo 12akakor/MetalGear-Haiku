@@ -73,6 +73,30 @@ Machine::Machine()
 }
 
 
+void
+Machine::CopyStateFrom(const Machine& other)
+{
+	fCpu.r = other.fCpu.r;
+	fCpu.eiPending = other.fCpu.eiPending;
+	fCpu.m1Wait = other.fCpu.m1Wait;
+	fVdp = other.fVdp;
+	fPsg = other.fPsg;
+	if (fRom.size() != other.fRom.size())
+		fRom = other.fRom;
+	memcpy(fBios, other.fBios, sizeof(fBios));
+	memcpy(fRam, other.fRam, sizeof(fRam));
+	memcpy(fBank, other.fBank, sizeof(fBank));
+	memcpy(fKeys, other.fKeys, sizeof(fKeys));
+	fJoystick = other.fJoystick;
+	fPsgLatch = other.fPsgLatch;
+	fFrames = other.fFrames;
+	fCycleDebt = other.fCycleDebt;
+	fTime = other.fTime;
+	tape = other.tape;
+	typed = other.typed;
+}
+
+
 bool
 Machine::LoadRom(const std::vector<uint8_t>& rom)
 {

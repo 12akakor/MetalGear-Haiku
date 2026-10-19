@@ -21,7 +21,7 @@ MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp src/MetalGear.rdef
 	xres -o $@ MetalGear.rsrc
 	mimeset -f $@
 
-tools: mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff
+tools: mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff routine_diff
 
 mgnative: tools/mgnative.cpp $(GAME) $(AUDIO)
 	$(CXX) $(CXXFLAGS) -o $@ $^
@@ -39,8 +39,10 @@ game_diff: tests/game/game_diff.cpp $(GAME) $(REF)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 save_diff: tests/save/save_diff.cpp $(GAME) $(REF)
 	$(CXX) $(CXXFLAGS) -o $@ $^
+routine_diff: tests/routine/routine_diff.cpp tests/routine/Registry.cpp $(GAME) $(REF)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f MetalGear MetalGear.rsrc mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff
+	rm -f MetalGear MetalGear.rsrc mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff routine_diff
 
 .PHONY: tools clean

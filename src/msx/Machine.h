@@ -39,6 +39,9 @@ public:
 	// rom: the 128 KB MegaROM. Returns false if the size is wrong.
 			bool			LoadRom(const std::vector<uint8_t>& rom);
 			void			Reset();
+	// Takes over the whole state of another machine (CPU registers, RAM,
+	// banks, VDP, PSG, keyboard, tape), for running a routine on a copy.
+			void			CopyStateFrom(const Machine& other);
 
 	// Runs one video frame (262 lines) with the interpreter.
 			void			RunFrame();

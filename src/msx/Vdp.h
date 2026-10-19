@@ -43,6 +43,7 @@ public:
 	// 'time' is the absolute CPU cycle count (for command durations).
 			void			SetBeam(int line, int cycle);
 			void			SetTime(uint64_t time) { fTime = time; }
+			uint64_t		Time() const { return fTime; }
 
 	// Renders one display line into the frame buffer.
 			void			RenderLine(int line);
