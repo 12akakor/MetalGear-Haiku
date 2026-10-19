@@ -374,7 +374,7 @@ DrawTileTIMP(uint8_t tile, uint8_t x, uint8_t y)
 }
 
 
-static void
+void
 DrawTileBlkTimp3(uint16_t hl, uint8_t rows, uint8_t columns, uint8_t x, uint8_t y)
 {
 	SetBanks_D_E_F();
@@ -403,6 +403,14 @@ DrawTilesBlock(uint16_t data, uint8_t x, uint8_t y)
 	uint8_t rows = Mem(data);
 	uint8_t columns = Mem(static_cast<uint16_t>(data + 1));
 	DrawTileBlkTimp3(static_cast<uint16_t>(data + 2), rows, columns, x, y);
+}
+
+
+void
+DrawTileBlkTimp2(uint16_t tiles, uint8_t rows, uint8_t columns, uint8_t x, uint8_t y)
+{
+	Ram(TilesetBank) = 0;
+	DrawTileBlkTimp3(tiles, rows, columns, x, y);
 }
 
 

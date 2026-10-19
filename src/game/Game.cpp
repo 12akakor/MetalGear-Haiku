@@ -11,6 +11,7 @@
 
 #include "Actors.h"
 #include "Common.h"
+#include "Doors.h"
 #include "GameGfx.h"
 #include "GameMain.h"
 #include "GfxBasic.h"

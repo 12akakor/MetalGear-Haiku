@@ -262,3 +262,9 @@ ROUTINE(SetHUDSprMask, "") { SetHUDSprMask(); }
 #include "../../src/game/NextRoom.h"
 ROUTINE(SetNextRoom, "") { SetNextRoom(); }
 ROUTINE(LocatePlayerEntry, "") { LocatePlayerEntry(); }
+
+#include "../../src/game/Doors.h"
+ROUTINE(DrawDoors, "") { DrawDoors(); }
+ROUTINE(ChkDoors, "") { ChkDoors(); }
+ROUTINE(ChkOpenDoor, "cf") { SetCarry(out, ChkOpenDoor(in.hl)); }
+ROUTINE(EraseDoorLogic, "") { EraseDoorLogic(); }

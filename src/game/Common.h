@@ -55,6 +55,9 @@ void		DrawTileTIMP(uint8_t tile, uint8_t x, uint8_t y);
 // Blocks of tiles: data = NY, NX, tiles (banks D-F).
 void		DrawTilesBlock(uint16_t data, uint8_t x, uint8_t y);
 void		DrawTileBlkTimp(uint16_t data, uint8_t x, uint8_t y);
+// Tiles only (no size header), tile bank 1 or the current one.
+void		DrawTileBlkTimp2(uint16_t tiles, uint8_t rows, uint8_t columns, uint8_t x, uint8_t y);
+void		DrawTileBlkTimp3(uint16_t tiles, uint8_t rows, uint8_t columns, uint8_t x, uint8_t y);
 void		DrawMetalGear(uint8_t x, uint8_t y);
 void		EraseMetalGear(uint8_t x, uint8_t y);
 void		SaveBackgTiles(uint16_t data, uint8_t x, uint8_t y);

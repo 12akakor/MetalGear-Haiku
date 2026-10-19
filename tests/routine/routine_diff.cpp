@@ -20,6 +20,7 @@
  * title and the demo run). -warp n: every n frames of play, move to the
  * neighbour of a random room and refill the life, to see more of the game.
  * -gear: all weapons and items, and the menus are opened now and then.
+ * -doors: now and then a closed door of the room starts opening.
  * -max: checks per routine (default 300).
  */
 #include "RoutineDiff.h"
@@ -296,6 +297,7 @@ main(int argc, char** argv)
 	long frames = atol(argv[2]);
 	bool play = false;
 	bool gear = false;
+	bool doors = false;
 	long warp = 0;
 	unsigned seed = 1;
 	std::vector<std::string> only;
@@ -304,6 +306,8 @@ main(int argc, char** argv)
 			play = true;
 		else if (!strcmp(argv[i], "-gear"))
 			gear = true;
+		else if (!strcmp(argv[i], "-doors"))
+			doors = true;
 		else if (!strcmp(argv[i], "-warp") && i + 1 < argc)
 			warp = atol(argv[++i]);
 		else if (!strcmp(argv[i], "-seed") && i + 1 < argc)
@@ -437,6 +441,20 @@ main(int argc, char** argv)
 				}
 				if (mode == 2 || mode == 3 || mode == 4)
 					sMain.SetJoystick(static_cast<uint8_t>(f % 20 < 3 ? 1 << (rand() % 4) : 0));
+			}
+			// -doors: now and then a closed door opens as if Snake had the card
+			if (doors && f % 50 == 0 && ram[var::GameStatus - 0xc000] == 5
+				&& ram[var::GameMode - 0xc000] == 0 && rand() % 4 == 0) {
+				uint8_t count = ram[var::DoorsInRoom - 0xc000];
+				if (count > 0 && count <= 8) {
+					uint8_t i = static_cast<uint8_t>(rand() % count);
+					uint8_t* d = ram + var::DoorsList - 0xc000 + i * 0x10;
+					if (d[1] != 0) {
+						ram[var::idxDoorOpen - 0xc000] = i;
+						ram[var::OpenDoorStatus - 0xc000] = 0;
+						ram[var::GameMode - 0xc000] = 0x07;	// GAME_MODE_OPEN_DOOR
+					}
+				}
 			}
 			// Text windows: RETURN now and then
 			if (f > 900)

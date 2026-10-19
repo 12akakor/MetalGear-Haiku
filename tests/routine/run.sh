@@ -5,7 +5,8 @@ rom=$1
 shift
 status=0
 for args in "8000" "30000 -play -warp 300 -seed 1" "40000 -play -gear -warp 300 -seed 2" \
-		"40000 -play -gear -warp 200 -seed 3"; do
+		"40000 -play -gear -warp 200 -seed 3" \
+		"40000 -play -gear -doors -warp 150 -seed 4"; do
 	./routine_diff "$rom" $args "$@" > /tmp/routine_diff.$$ || status=1
 	grep "FAIL" /tmp/routine_diff.$$ | head -20
 	tail -1 /tmp/routine_diff.$$

@@ -16,7 +16,6 @@ void		ChkSaveGameStatus();
 void		SetMaxAmmoVals();
 void		LimitAmmo();
 void		CompactWeapons();
-void		DrawDoors();
 void		DrawRoomItems();
 void		DrawLaserBeams();
 void		ChkDrawMetalGear();
@@ -48,7 +47,6 @@ void		CommonLogic();
 void		MenuEquip();
 void		LorryMoving();
 void		ElevatorRoomLogic();
-void		EraseDoorLogic();
 void		CaptureSceneLogic();
 void		chkMadnarLate();
 
