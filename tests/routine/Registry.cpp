@@ -174,3 +174,35 @@ ROUTINE(DecodeText, "a,hl,de") { out.a = DecodeText(&out.hl, &out.de); }
 ROUTINE(DrawTextBoxIn, "cf") { SetCarry(out, DrawTextBoxIn()); }
 ROUTINE(TextBoxExit, "") { TextBoxExit(); }
 ROUTINE(GetTextBoxXYSize, "de,bc") { GetTextBoxXYSize(&out.de, &out.bc); }
+
+// Player.cpp
+#include "../../src/game/Player.h"
+
+ROUTINE(InitPlayerVars, "") { InitPlayerVars(); }
+ROUTINE(PlayerControlLogic, "") { PlayerControlLogic(); }
+ROUTINE(GetPlayerDir, "") { GetPlayerDir(); }
+ROUTINE(ControlPlayerV, "") { ControlPlayerV(); }
+ROUTINE(ControlPlayerH, "") { ControlPlayerH(); }
+ROUTINE(ChkControlPlayer, "") { ChkControlPlayer(); }
+ROUTINE(chkPunch, "") { chkPunch(); }
+ROUTINE(ChkPlayerColl, "") { ChkPlayerColl(); }
+ROUTINE(PunchLogic2, "") { PunchLogic2(); }
+ROUTINE(ChkCtrlElevator, "") { ChkCtrlElevator(); }
+ROUTINE(ChkWater, "") { ChkWater(); }
+ROUTINE(ChkRoofAirFlow, "") { ChkRoofAirFlow(); }
+ROUTINE(ChkStartClimb, "") { ChkStartClimb(); }
+ROUTINE(ChkExitLadders, "") { ChkExitLadders(); }
+ROUTINE(ChkExitRoom, "") { ChkExitRoom(); }
+ROUTINE(ChkLimitXElevator, "") { ChkLimitXElevator(); }
+ROUTINE(ChkLadderLimits, "") { ChkLadderLimits(); }
+ROUTINE(MovePlayerX, "hl") { out.hl = MovePlayerX(); }
+ROUTINE(MovePlayerY, "hl") { out.hl = MovePlayerY(); }
+ROUTINE(IncRescued, "") { IncRescued(); }
+ROUTINE(AnimatePlayer, "") { AnimatePlayer(); }
+ROUTINE(SetGrenaTargetSpr, "") { SetGrenaTargetSpr(); }
+ROUTINE(ChkTileCollision, "cf") { SetCarry(out, ChkTileCollision(in.ix, in.b, in.c)); }
+ROUTINE(ChkTileCollision_, "cf") { SetCarry(out, ChkTileCollision_(in.h, in.l, in.b, in.c)); }
+ROUTINE(GetTilePlayer, "hl") { out.hl = GetTilePlayer(); }
+ROUTINE(GetTileInXY, "hl") { out.hl = GetTileInXY(in.h, in.l); }
+ROUTINE(ChkGasRooms, "") { ChkGasRooms(); }
+ROUTINE(DecrementLife_C, "") { DecrementLife_C(in.c); }

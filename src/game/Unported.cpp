@@ -78,3 +78,7 @@ UNPORTED(AnimateGuard2)
 
 UNPORTED0(DrawOpenPitfalls)
 UNPORTED0(ExitRadio)
+UNPORTED0(IntroSceneLogic)
+UNPORTED0(ChkSaveGameStatus)
+UNPORTED0(SetMaxAmmoVals)
+UNPORTED0(LimitAmmo)

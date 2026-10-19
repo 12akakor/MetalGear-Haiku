@@ -10,6 +10,10 @@
 
 void		DrawOpenPitfalls();
 void		ExitRadio();
+void		IntroSceneLogic();
+void		ChkSaveGameStatus();
+void		SetMaxAmmoVals();
+void		LimitAmmo();
 
 
 #endif	// MG_UNPORTED_H
