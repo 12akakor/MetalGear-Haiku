@@ -278,3 +278,18 @@ ROUTINE(LimitAmmo, "") { LimitAmmo(); }
 ROUTINE(SetMaxAmmoVals, "") { SetMaxAmmoVals(); }
 ROUTINE(CompactWeapons, "") { CompactWeapons(); }
 ROUTINE(CompactEquipment, "") { CompactEquipment(); }
+
+#include "../../src/game/Weapons.h"
+#include "../../src/game/Contact.h"
+ROUTINE(ChkWeaponShot, "") { ChkWeaponShot(); }
+ROUTINE(PlayerShotsLogic, "") { PlayerShotsLogic(); }
+ROUTINE(SetPlayerShotSpr, "") { SetPlayerShotSpr(); }
+ROUTINE(ChkAlertTrigger, "") { ChkAlertTrigger(in.ix); }
+ROUTINE(SetAlertModeRespawn, "") { SetAlertModeRespawn(in.ix, in.a); }
+ROUTINE(CommonLogic, "") { CommonLogic(); }
+ROUTINE(ChkPlayerShots, "") { ChkPlayerShots(); }
+ROUTINE(ChkTouchEnemies, "") { ChkTouchEnemies(); }
+ROUTINE(ChkOnBridge, "") { ChkOnBridge(); }
+ROUTINE(ChkElectricFloor, "") { ChkElectricFloor(); }
+ROUTINE(ChkIncomingCall, "") { ChkIncomingCall(); }
+ROUTINE(DecNukeTimer, "") { DecNukeTimer(); }

@@ -11,6 +11,7 @@
 
 #include "Actors.h"
 #include "Common.h"
+#include "Contact.h"
 #include "Doors.h"
 #include "GameGfx.h"
 #include "GameMain.h"
@@ -28,6 +29,7 @@
 #include "Structures.h"
 #include "Text.h"
 #include "Unported.h"
+#include "Weapons.h"
 
 
 using namespace var;
