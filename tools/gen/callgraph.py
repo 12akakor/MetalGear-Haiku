@@ -71,6 +71,9 @@ def parse(root):
 				r["falls"] = False
 				continue
 			r["size"] += 1
+			if op == "call":
+				for w in WORD.findall(args):
+					r.setdefault("calls", set()).add(w)
 			if op in ("call", "jp", "jr", "djnz", "ld"):
 				for w in WORD.findall(args):
 					if w.lower() not in ("a", "b", "c", "d", "e", "h", "l", "af", "bc", "de",
@@ -112,6 +115,52 @@ def main():
 	donesz = sum(routines[n]["size"] for n in done)
 	print("%d code labels reachable, %d instructions; %d labels (%d instr) have a C++ function"
 		% (len(code), total, len(done), donesz))
+	if "-order" in sys.argv:
+		# routines = labels that are called (or in tables); body = labels up
+		# to the next routine; listed callees first
+		called = set()
+		for n in order:
+			called |= routines[n].get("calls", set())
+			if routines[n]["size"] == 0:
+				called |= routines[n]["refs"]
+		called |= set(roots)
+		owner = {}
+		cur = None
+		for n in order:
+			if n in called and routines[n]["size"] > 0:
+				cur = n
+			owner[n] = cur
+		body = {}
+		for n in order:
+			if owner[n] is not None:
+				body.setdefault(owner[n], []).append(n)
+		def deps(rt):
+			out = set()
+			for lab in body.get(rt, []):
+				for t in routines[lab]["refs"]:
+					if t in owner and owner[t] is not None and owner[t] != rt and routines[t]["size"] > 0:
+						out.add(owner[t])
+			return out
+		done_set, out = set(), []
+		import sys as _s
+		_s.setrecursionlimit(100000)
+		def visit(rt, stack=()):
+			if rt in done_set or rt in stack:
+				return
+			for d in sorted(deps(rt)):
+				visit(d, stack + (rt,))
+			done_set.add(rt)
+			out.append(rt)
+		for r0 in roots:
+			if r0 in owner:
+				visit(owner[r0])
+		total = 0
+		for rt in out:
+			size = sum(routines[l]["size"] for l in body.get(rt, []))
+			total += size
+			mark = "done" if rt in native else ""
+			print("%5d %6d  %-30s %-4s %s" % (size, total, rt, mark,
+				os.path.relpath(routines[rt]["file"], root)))
 	if "-todo" in sys.argv:
 		for n in code:
 			if n not in native:

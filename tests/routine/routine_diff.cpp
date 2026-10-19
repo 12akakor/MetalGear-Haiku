@@ -13,10 +13,14 @@
  * compared: variables, screen memory, palette, display settings and the
  * returned registers. The game itself goes on unchanged.
  *
- *   routine_diff <rom> <frames> [-play] [-seed n] [-max n] [names...]
+ *   routine_diff <rom> <frames> [-play] [-gear] [-warp n] [-seed n] [-max n]
+ *                [names...]
  *
  * -play: start a game with SPACE and move around at random (otherwise the
- * title and the demo run). -max: checks per routine (default 300).
+ * title and the demo run). -warp n: every n frames of play, move to the
+ * neighbour of a random room and refill the life, to see more of the game.
+ * -gear: all weapons and items, and the menus are opened now and then.
+ * -max: checks per routine (default 300).
  */
 #include "RoutineDiff.h"
 
@@ -28,6 +32,7 @@
 #include <string>
 
 #include "../RomBanks.h"
+#include "../../src/game/Common.h"
 #include "../../src/game/GameData.h"
 #include "../../src/game/GameRam.h"
 #include "../../src/game/RamSymbols.h"
@@ -264,11 +269,17 @@ main(int argc, char** argv)
 	}
 	long frames = atol(argv[2]);
 	bool play = false;
+	bool gear = false;
+	long warp = 0;
 	unsigned seed = 1;
 	std::vector<std::string> only;
 	for (int i = 3; i < argc; i++) {
 		if (!strcmp(argv[i], "-play"))
 			play = true;
+		else if (!strcmp(argv[i], "-gear"))
+			gear = true;
+		else if (!strcmp(argv[i], "-warp") && i + 1 < argc)
+			warp = atol(argv[++i]);
 		else if (!strcmp(argv[i], "-seed") && i + 1 < argc)
 			seed = static_cast<unsigned>(atol(argv[++i]));
 		else if (!strcmp(argv[i], "-max") && i + 1 < argc)
@@ -322,8 +333,97 @@ main(int argc, char** argv)
 				holdUntil = f + 20 + rand() % 90;
 			}
 			sMain.SetJoystick(static_cast<uint8_t>(held));
+			uint8_t* ram = sMain.Ram();
+			static long lastWarp = 0;
+			if (warp > 0 && f - lastWarp >= warp && ram[var::GameStatus - 0xc000] == 5
+				&& ram[var::GameMode - 0xc000] == 0 && ram[var::Room - 0xc000] < 126
+				&& ram[var::PlayerControlMod - 0xc000] == 0) {
+				lastWarp = f;
+				// a room with a neighbour on that side (rewritten
+				// GetNextRoomNum on scratch variables)
+				for (int tries = 0; tries < 50; tries++) {
+					uint8_t room = static_cast<uint8_t>(rand() % 126);
+					uint8_t side = static_cast<uint8_t>(1 + rand() % 4);
+					Ram(var::Room) = room;
+					Ram(var::NextRoomDirect) = side;
+					uint8_t next = GetNextRoomNum();
+					if (next >= 126 || next == 103 || room == 103)
+						continue;
+					ram[var::Room - 0xc000] = room;
+					ram[var::NextRoomDirect - 0xc000] = side;
+					ram[var::IdDoorEnter - 0xc000] = 0;
+					ram[var::GameMode - 0xc000] = 1;
+					break;
+				}
+			}
+			if (warp > 0)
+				ram[var::Life - 0xc000] = ram[var::MaxLife - 0xc000];
+			if (gear) {
+				static bool given = false;
+				if (!given && ram[var::GameStatus - 0xc000] == 5) {
+					given = true;
+					for (int w = 0; w < 8; w++) {
+						uint8_t* p = ram + var::Weapons - 0xc000 + w * 4;
+						p[0] = static_cast<uint8_t>(w + 1);
+						p[1] = 0x50;
+						p[2] = 0x01;
+					}
+					for (int e = 0; e < 25; e++) {
+						uint8_t* p = ram + var::Equipment - 0xc000 + e * 4;
+						uint8_t id = static_cast<uint8_t>(e + 1);
+						p[0] = id == 0x17 ? 0 : id;	// not the transmitter
+						p[1] = static_cast<uint8_t>(id >= 0x0e && id <= 0x15 ? id - 0x0d : 5);
+						p[2] = 0;
+					}
+				}
+				// F2 weapons, F3 equipment, F4 radio: open, move, close
+				static int menuKey = -1;
+				static long menuUntil = 0;
+				static long releaseAt = 0;
+				uint8_t mode = ram[var::GameMode - 0xc000];
+				if (f == releaseAt) {
+					sMain.SetKey(6, 6, false);
+					sMain.SetKey(6, 7, false);
+					sMain.SetKey(7, 0, false);
+				}
+				if (f % 12 == 0) {
+					releaseAt = f + 6;
+					if (mode == 0 && menuKey < 0 && rand() % 80 == 0) {
+						menuKey = rand() % 3;
+						menuUntil = f + 60 + rand() % 200;
+						sMain.SetKey(menuKey < 2 ? 6 : 7, menuKey == 0 ? 6 : menuKey == 1 ? 7 : 0,
+							true);
+					} else if (menuKey >= 0 && f >= menuUntil) {
+						sMain.SetKey(menuKey < 2 ? 6 : 7, menuKey == 0 ? 6 : menuKey == 1 ? 7 : 0,
+							true);
+						menuKey = -1;
+					}
+				}
+				// stuck in a menu or the radio: try the keys that leave
+				static long inMode = 0;
+				inMode = mode == 0 ? 0 : inMode + 1;
+				if (inMode > 500 && f % 30 == 0) {
+					static const int kRow[] = { 7, 6, 6 };
+					static const int kBit[] = { 0, 6, 7 };
+					int k = static_cast<int>((f / 30) % 3);
+					sMain.SetKey(kRow[k], kBit[k], true);
+					releaseAt = f + 6;
+				}
+				if (mode == 2 || mode == 3 || mode == 4)
+					sMain.SetJoystick(static_cast<uint8_t>(f % 20 < 3 ? 1 << (rand() % 4) : 0));
+			}
+			// Text windows: RETURN now and then
+			if (f > 900)
+				sMain.SetKey(7, 7, ram[var::GameMode - 0xc000] == 10 && f % 16 < 4);
 		}
 		sMain.RunFrame();
+		if (getenv("MG_TRACE") != NULL && f % 300 == 0) {
+			uint8_t* ram = sMain.Ram();
+			printf("frame %ld: status %d,%d mode %d room %d life %d\n", f,
+				ram[var::GameStatus - 0xc000], ram[var::GameSubstatus - 0xc000],
+				ram[var::GameMode - 0xc000], ram[var::Room - 0xc000],
+				ram[var::Life - 0xc000]);
+		}
 	}
 
 	long checks = 0;
