@@ -49,8 +49,8 @@ uint8_t		GetDistancePlayer(uint16_t ix);
 uint8_t		GetRandom3(uint16_t ix);
 // Rooms where the guards of an alert keep coming back.
 void		SetRespawnTime();
-// A shot from 16 pixels above the actor.
-void		AddEnemyShot2(uint16_t ix, uint8_t id);
+// A shot from 16 pixels above the actor; returns it (the original's HL).
+uint16_t	AddEnemyShot2(uint16_t ix, uint8_t id);
 
 void		SaveAlertIconBacknd(uint8_t sx, uint8_t sy);
 void		Draw16x16(uint8_t sx, uint8_t sy, uint8_t dx, uint8_t dy);

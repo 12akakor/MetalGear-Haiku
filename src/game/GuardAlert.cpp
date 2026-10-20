@@ -288,10 +288,10 @@ SetRespawnTime()
 }
 
 
-void
+uint16_t
 AddEnemyShot2(uint16_t ix, uint8_t id)
 {
-	AddEnemy(id, static_cast<uint8_t>(A(ix, ACTOR::Y) - 0x10), A(ix, ACTOR::X));
+	return AddEnemy(id, static_cast<uint8_t>(A(ix, ACTOR::Y) - 0x10), A(ix, ACTOR::X));
 }
 
 

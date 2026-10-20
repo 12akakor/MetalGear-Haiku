@@ -103,31 +103,19 @@ void		InitLaserRoom(uint16_t ix);
 
 // Not rewritten yet (Unported.cpp)
 void		InitEllenVoice(uint16_t ix);
-void		InitScorpion(uint16_t ix);
 void		InitBigBoss(uint16_t ix);
-void		InitShotGunner(uint16_t ix);
-void		InitMachGunKid(uint16_t ix);
-void		InitFireTrooper(uint16_t ix);
 void		InitCowardDuck(uint16_t ix);
-void		InitShotGunnerShot(uint16_t ix);
 void		InitCaptureScene(uint16_t ix);
 void		InitPrisoner(uint16_t ix);
 void		InitGuardSilencer(uint16_t ix);
-void		InitMGunKidShot(uint16_t ix);
 void		InitBoomerang(uint16_t ix);
 void		ChkSayHelpMe(uint16_t ix);
-void		ScorpionLogic(uint16_t ix);
 void		BigBossLogic(uint16_t ix);
-void		ShotGunnerLogic(uint16_t ix);
-void		MachGunKidLogic(uint16_t ix);
-void		FireTrooperLoogic(uint16_t ix);
 void		CowardDuckLogic(uint16_t ix);
-void		ShotGunnerShot(uint16_t ix);
 void		CaptureGuardsLogic(uint16_t ix);
 void		PrisonerLogic(uint16_t ix);
 void		FakeMadnadLogic(uint16_t ix);
 void		GuardSilencerLogic(uint16_t ix);
-void		MGunKidShotLogic(uint16_t ix);
 void		BoomerangLogic(uint16_t ix);
 
 

@@ -415,3 +415,15 @@ ROUTINE(InitDesertSecurity, "") { InitDesertSecurity(in.ix); }
 ROUTINE(DesertSecurityLogic, "") { DesertSecurityLogic(in.ix); }
 ROUTINE(InitLorryShooter, "") { InitLorryShooter(in.ix); }
 ROUTINE(LorryShooterLogic, "") { LorryShooterLogic(in.ix); }
+ROUTINE(InitScorpion, "") { InitScorpion(in.ix); }
+ROUTINE(ScorpionLogic, "") { ScorpionLogic(in.ix); }
+ROUTINE(InitMachGunKid, "") { InitMachGunKid(in.ix); }
+ROUTINE(MachGunKidLogic, "") { MachGunKidLogic(in.ix); }
+ROUTINE(InitMGunKidShot, "") { InitMGunKidShot(in.ix); }
+ROUTINE(MGunKidShotLogic, "") { MGunKidShotLogic(in.ix); }
+ROUTINE(InitShotGunner, "") { InitShotGunner(in.ix); }
+ROUTINE(ShotGunnerLogic, "") { ShotGunnerLogic(in.ix); }
+ROUTINE(InitShotGunnerShot, "") { InitShotGunnerShot(in.ix); }
+ROUTINE(ShotGunnerShot, "") { ShotGunnerShot(in.ix); }
+ROUTINE(InitFireTrooper, "") { InitFireTrooper(in.ix); }
+ROUTINE(FireTrooperLoogic, "") { FireTrooperLoogic(in.ix); }

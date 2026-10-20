@@ -4,7 +4,8 @@
  */
 
 
-// Rewritten from logic/actors/tank.asm and arnold.asm.
+// Rewritten from logic/actors/tank.asm, arnold.asm, scorpion.asm,
+// machinegunkid.asm, shotgunner.asm and firetropper.asm.
 #include "Bosses.h"
 
 #include "Actors.h"
@@ -13,10 +14,12 @@
 #include "GameMain.h"
 #include "GfxBasic.h"
 #include "Guards.h"
+#include "Text.h"
 #include "Player.h"
 #include "Random.h"
 #include "RoomActors.h"
 #include "Rom.h"
+#include "Sprites.h"
 #include "Structures.h"
 
 
@@ -36,6 +39,21 @@ inline uint16_t
 Add16(uint16_t address, int n)
 {
 	return static_cast<uint16_t>(address + n);
+}
+
+
+inline uint16_t
+IncLow(uint16_t address, int n = 1)
+{
+	return static_cast<uint16_t>((address & 0xff00) | ((address + n) & 0xff));
+}
+
+
+// Number of passes of a DJNZ loop started with this count.
+inline int
+Loops(uint8_t count)
+{
+	return count == 0 ? 256 : count;
 }
 
 
@@ -381,6 +399,722 @@ ArnoldLogic(uint16_t ix)
 		default:
 			if (gUnported == NULL)
 				gUnported = "ArnoldLogic: bad status";
+			return;
+	}
+}
+
+
+// --- Scorpions in the desert (scorpion.asm) ------------------------------
+
+namespace {
+
+void
+SetScorpionSprId(uint16_t ix, uint8_t direction)
+{
+	uint8_t sprite = static_cast<uint8_t>(direction * 2 + 0x60);
+	if ((A(ix, ACTOR::ANIM_CNT) & 4) != 0)
+		sprite++;
+	A(ix, ACTOR::SpriteId) = sprite;
+}
+
+
+// True (carry) when the scorpion is near an edge of the room.
+bool
+ChkScorpionLimits(uint16_t ix)
+{
+	if (static_cast<uint8_t>(A(ix, ACTOR::Y) + 0x50) < 0x61)
+		return true;
+	return static_cast<uint8_t>(A(ix, ACTOR::X) + 0x10) < 0x21;
+}
+
+
+void
+ScorpionSetSpeed(uint16_t ix)
+{
+	uint16_t speeds = GetPointerDE2A(static_cast<uint16_t>(SYM(ScorpionSpeedDat) - 2),
+		A(ix, ACTOR::Direction));
+	A(ix, ACTOR::SpeedY) = static_cast<uint8_t>(speeds);
+	A(ix, ACTOR::SpeedX) = static_cast<uint8_t>(speeds >> 8);
+}
+
+
+void
+ScorpionTurn(uint16_t ix)
+{
+	uint8_t direction = GetOppositeDir(A(ix, ACTOR::Direction));
+	A(ix, ACTOR::Direction) = direction;
+	SetScorpionSprId(ix, direction);
+	ScorpionSetSpeed(ix);
+}
+
+
+void
+ScorpionNewDir(uint16_t ix)
+{
+	A(ix, ACTOR::Wait) = static_cast<uint8_t>(GetRandom3(ix) + 5);
+	uint8_t direction = static_cast<uint8_t>(GetRandom3(ix) + 1);
+	A(ix, ACTOR::Direction) = direction;
+	SetScorpionSprId(ix, direction);
+	if (ChkScorpionLimits(ix))
+		ScorpionTurn(ix);
+	else
+		ScorpionSetSpeed(ix);
+}
+
+}	// namespace
+
+
+void
+InitScorpion(uint16_t ix)
+{
+	A(ix, ACTOR::Status) = 2;	// waits
+	A(ix, ACTOR::Wait) = 8;
+	SetScorpionSprId(ix, static_cast<uint8_t>(((RefreshR() ^ Ram(TickCounter)) & 3) + 1));
+}
+
+
+void
+ScorpionLogic(uint16_t ix)
+{
+	switch (A(ix, ACTOR::Status)) {
+		case 0:	// wanders; near Snake it attacks
+			if (GetDistancePlayer(ix) < 0x51) {
+				A(ix, ACTOR::Status) = 1;
+				A(ix, ACTOR::Wait) = 8;
+				uint16_t speedY;
+				uint16_t speedX = CalcShot(ix, &speedY);
+				SetActorSpeed(ix, speedX, speedY);
+				return;
+			}
+			if (ChkScorpionLimits(ix)) {
+				ScorpionTurn(ix);
+				return;
+			}
+			if (--A(ix, ACTOR::Wait) != 0)
+				return;
+			ScorpionNewDir(ix);
+			return;
+		case 1:	// attacks for a while
+			if (!ChkScorpionLimits(ix)) {
+				if (--A(ix, ACTOR::Wait) != 0)
+					return;
+			}
+			A(ix, ACTOR::Status)++;
+			A(ix, ACTOR::Wait) = 0x14;
+			ResetActorSpeed(ix);
+			return;
+		case 2:
+			if (--A(ix, ACTOR::Wait) != 0)
+				return;
+			A(ix, ACTOR::Status) = 0;
+			A(ix, ACTOR::Moving) = 1;
+			ScorpionNewDir(ix);
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "ScorpionLogic: bad status";
+			return;
+	}
+}
+
+
+// --- Machine Gun Kid (machinegunkid.asm) ----------------------------------
+
+namespace {
+
+void
+MG_SetWalk(uint16_t ix, uint8_t direction, uint8_t speed, uint8_t status)
+{
+	A(ix, ACTOR2::Direction) = direction;
+	A(ix, ACTOR2::SpeedX) = speed;
+	A(ix, ACTOR2::SpriteId) = 0x33;	// walks
+	A(ix, ACTOR2::Wait) = 8;
+	A(ix, ACTOR2::Status) = status;
+}
+
+
+// Picks a side, or walks towards Snake; then hides.
+void
+MG_ChoseDir(uint16_t ix)
+{
+	uint8_t x = A(ix, ACTOR2::X);
+	if (x == 0xe0)
+		MG_SetWalk(ix, DIR_LEFT, 0xfc, 4);
+	else if (x == 0x20)
+		MG_SetWalk(ix, DIR_RIGHT, 4, 4);
+	else if (Ram(PlayerX) < x)
+		MG_SetWalk(ix, DIR_LEFT, 0xfc, 4);
+	else
+		MG_SetWalk(ix, DIR_RIGHT, 4, 4);
+	A(ix, ACTOR2::MOVING) = 1;
+}
+
+
+void
+MG_WalkAnim(uint16_t ix)
+{
+	A(ix, ACTOR2::SpriteId) = (A(ix, ACTOR2::ANIM_CNT) & 4) != 0 ? 0x34 : 0x33;
+}
+
+
+void
+MG_ThinkMovement(uint16_t ix)
+{
+	if (--A(ix, ACTOR::Wait) != 0) {
+		// Snake behind another wall: walks towards him
+		if (static_cast<uint8_t>(Ram(PlayerX) - A(ix, ACTOR2::X) + 8) < 0x11)
+			return;
+		if (Ram(PlayerX) < A(ix, ACTOR2::X))
+			MG_SetWalk(ix, DIR_LEFT, 0xfc, 2);
+		else
+			MG_SetWalk(ix, DIR_RIGHT, 4, 2);
+		return;
+	}
+	if (((RefreshR() ^ A(ix, ACTOR2::ANIM_CNT)) & 1) != 0)
+		MG_SetWalk(ix, DIR_LEFT, 0xfc, 2);
+	else
+		MG_SetWalk(ix, DIR_RIGHT, 4, 2);
+}
+
+
+// Bursts: the bullets spread 0, 1, 2, 3, 4, 3, 2, 1.
+void
+MG_Shooting(uint16_t ix)
+{
+	if (static_cast<uint8_t>(Ram(PlayerX) - A(ix, ACTOR2::X) + 0x30) >= 0x61) {
+		MG_ChoseDir(ix);
+		return;
+	}
+	if (--A(ix, ACTOR2::Wait) == 0) {
+		MG_ChoseDir(ix);
+		return;
+	}
+	A(ix, ACTOR2::SpriteId) = 0x31;
+	if ((A(ix, ACTOR2::Wait) & 3) != 0)
+		return;
+	A(ix, ACTOR2::SpriteId) = 0x32;	// recoil
+	uint16_t shot = AddEnemyShot2(ix, ID_SHOT_M_GUN_KID);
+	uint8_t burst = static_cast<uint8_t>((A(ix, ACTOR2::Timer) + 1) & 7);
+	A(ix, ACTOR2::Timer) = burst;
+	if (burst >= 5)
+		burst = static_cast<uint8_t>(8 - burst);
+	Ram(static_cast<uint16_t>(shot + M_GUN_KID_SHOT::BurstDir)) = burst;
+}
+
+}	// namespace
+
+
+void
+InitMachGunKid(uint16_t ix)
+{
+	if ((Ram(MachGunStatus) & 1) != 0) {
+		DismissActor(ix);	// dead
+		return;
+	}
+	A(ix, ACTOR2::SpriteId) = 0x31;
+	A(ix, ACTOR2::TIMER) = 2;
+}
+
+
+void
+MachGunKidLogic(uint16_t ix)
+{
+	switch (A(ix, ACTOR::Status)) {
+		case 0:	// "I'm Machine Gun Kid"
+			if (--A(ix, ACTOR2::TIMER) != 0)
+				return;
+			if ((Ram(MachGunStatus) & 2) == 0) {
+				Ram(MachGunStatus) |= 2;
+				SetTextUnskippable(79);
+			}
+			A(ix, ACTOR2::MOVING) = 1;
+			SetBossMusic();
+			MG_ChoseDir(ix);
+			return;
+		case 1:
+			MG_ThinkMovement(ix);
+			return;
+		case 2:	// walks out, then shoots
+			MG_WalkAnim(ix);
+			if (--A(ix, ACTOR2::Wait) != 0)
+				return;
+			A(ix, ACTOR2::SpriteId) = 0x31;
+			A(ix, ACTOR2::Wait) = 0x28;
+			A(ix, ACTOR2::Status) = 3;
+			A(ix, ACTOR2::SpeedX) = 0;
+			return;
+		case 3:
+			MG_Shooting(ix);
+			return;
+		case 4:	// hides behind a wall
+			MG_WalkAnim(ix);
+			if (--A(ix, ACTOR2::Wait) != 0)
+				return;
+			A(ix, ACTOR2::Status) = 1;
+			A(ix, ACTOR2::SpeedX) = 0;
+			A(ix, ACTOR2::Wait) = 0x2d;
+			A(ix, ACTOR2::SpriteId) = 0x31;
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "MachGunKidLogic: bad status";
+			return;
+	}
+}
+
+
+void
+InitMGunKidShot(uint16_t ix)
+{
+	A(ix, M_GUN_KID_SHOT::Moving) = 1;
+	A(ix, M_GUN_KID_SHOT::COLLISION_CFG) = 1;
+	A(ix, M_GUN_KID_SHOT::SpriteId) = 0x72;
+}
+
+
+void
+MGunKidShotLogic(uint16_t ix)
+{
+	if ((A(ix, M_GUN_KID_SHOT::Configured) & 1) != 0)
+		return;
+	A(ix, M_GUN_KID_SHOT::Configured) = 1;
+	// three RRA from a clear carry, then RL D: DE = direction * 64
+	uint8_t a = A(ix, M_GUN_KID_SHOT::BurstDir);
+	uint8_t e = static_cast<uint8_t>(((a & 3) << 6) | (a >> 3));
+	uint8_t d = (a >> 2) & 1;
+	uint16_t speed = static_cast<uint16_t>(0xff80 + ((d << 8) | e));
+	A(ix, M_GUN_KID_SHOT::SpeedXdec) = static_cast<uint8_t>(speed);
+	A(ix, M_GUN_KID_SHOT::SpeedX) = static_cast<uint8_t>(speed >> 8);
+	A(ix, M_GUN_KID_SHOT::SpeedY) = 5;
+	SetSoundEntryChk(5);
+}
+
+
+// --- Shoot Gunner (shotgunner.asm) -----------------------------------------
+
+namespace {
+
+void
+SetSGunnerRollSpr(uint16_t ix)
+{
+	uint8_t frame = static_cast<uint8_t>((A(ix, ACTOR::ANIM_CNT) & 6) >> 1);
+	A(ix, ACTOR::SpriteId) = Mem(static_cast<uint16_t>(SYM(SGunnerRollSpr) + frame));
+}
+
+
+void
+SetSGunnerSpeed(uint16_t ix)
+{
+	if (Ram(PlayerX) >= A(ix, SHOT_GUNNER::X)) {
+		A(ix, SHOT_GUNNER::SpeedX) = 4;
+		A(ix, SHOT_GUNNER::Direction) = DIR_RIGHT;
+	} else {
+		A(ix, SHOT_GUNNER::SpeedX) = 0xfc;
+		A(ix, SHOT_GUNNER::Direction) = DIR_LEFT;
+	}
+}
+
+
+void
+ShotGunnerStop(uint16_t ix)
+{
+	A(ix, ACTOR::SpeedX) = 0;
+	A(ix, ACTOR::SpriteId) = 0x5d;	// stands
+	A(ix, ACTOR::Wait) = 0x2d;
+	A(ix, ACTOR::Status) = 2;	// shoots
+	A(ix, ACTOR::COLLISION_CFG) = 3;
+}
+
+}	// namespace
+
+
+void
+InitShotGunner(uint16_t ix)
+{
+	if ((Ram(ShotGunnerStat) & 1) != 0) {
+		DismissActor(ix);	// dead
+		return;
+	}
+	A(ix, SHOT_GUNNER::SpriteId) = 0x5d;
+	A(ix, SHOT_GUNNER::IntroDelay) = 2;
+	A(ix, SHOT_GUNNER::Moving)++;
+	SetSGunnerSpeed(ix);
+	A(ix, SHOT_GUNNER::Wait) = 0x0b;
+	A(ix, SHOT_GUNNER::COLLISION_CFG) = 0;
+}
+
+
+void
+ShotGunnerLogic(uint16_t ix)
+{
+	switch (A(ix, SHOT_GUNNER::Status)) {
+		case 0:	// "I'm Shoot Gunner"
+			if (--A(ix, SHOT_GUNNER::IntroDelay) != 0)
+				return;
+			if ((Ram(ShotGunnerStat) & 2) == 0) {
+				Ram(ShotGunnerStat) |= 2;
+				SetTextUnskippable(61);
+			}
+			A(ix, ACTOR::Status) = 1;
+			SetBossMusic();
+			return;
+		case 1:	// rolls (no collisions)
+		{
+			SetSGunnerRollSpr(ix);
+			uint8_t direction = (A(ix, ACTOR::SpeedX) & 0x80) != 0 ? DIR_LEFT : DIR_RIGHT;
+			if (!ChkTileCollision(ix, 0, direction)) {
+				if (--A(ix, ACTOR::Wait) != 0)
+					return;
+			}
+			ShotGunnerStop(ix);
+			return;
+		}
+		case 2:	// shoots
+			if (--A(ix, ACTOR::Wait) == 0) {
+				SetSGunnerSpeed(ix);
+				A(ix, ACTOR::Status) = 1;
+				A(ix, ACTOR::Wait) = 0x0b;
+				A(ix, ACTOR::COLLISION_CFG) = 0;
+				SetSGunnerRollSpr(ix);
+				return;
+			}
+			if (Ram(PlayerY) >= 166 && Ram(PlayerX) >= 170)
+				return;	// behind the boxes
+			if ((A(ix, ACTOR::ANIM_CNT) & 0x0f) != 0)
+				return;
+			AddEnemyShot2(ix, ID_SGUNNER_SHOT);
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "ShotGunnerLogic: bad status";
+			return;
+	}
+}
+
+
+void
+InitShotGunnerShot(uint16_t ix)
+{
+	A(ix, ACTOR::Moving)++;
+	A(ix, ACTOR::SpriteId) = 0x6e;
+	A(ix, ACTOR::COLLISION_CFG) = 1;
+	A(ix, ACTOR::Wait) = 0;
+	uint16_t speedY;
+	uint16_t speedX = CalcShot2(ix, 0x90, &speedY);
+	SetActorSpeed(ix, speedX, speedY);
+	SetSoundEntryChk(0x0f);
+}
+
+
+// The shot spreads while it flies.
+void
+ShotGunnerShot(uint16_t ix)
+{
+	uint8_t time = ++A(ix, ACTOR::Wait);
+	uint8_t shape = 2;
+	uint8_t sprite = 0x6e;
+	if (time >= 7) {
+		sprite++;
+		if (time >= 14) {
+			sprite++;
+			if (time >= 21) {
+				sprite++;
+				shape = 1;
+			}
+		}
+	}
+	A(ix, ACTOR::SpriteId) = sprite;
+	if (ChkTileCollision(ix, shape, DIR_DOWN))
+		DismissActor0(ix);
+}
+
+
+// --- Fire Trooper (firetropper.asm) ------------------------------------------
+
+namespace {
+
+void
+FT_MoveToPlayer(uint16_t ix)
+{
+	A(ix, FIRE_TROPPER::MOVING) = 1;
+	if (Ram(PlayerX) >= A(ix, FIRE_TROPPER::X)) {
+		A(ix, FIRE_TROPPER::SpriteId) = 0x2c;
+		SetActorSpeedX(ix, 0x200);
+	} else {
+		A(ix, FIRE_TROPPER::SpriteId) = 0x28;
+		SetActorSpeedX(ix, 0xfe00);
+	}
+}
+
+
+void
+InitFireTrooper2(uint16_t ix)
+{
+	A(ix, FIRE_TROPPER::DELTA_) = 4;
+	A(ix, FIRE_TROPPER::ANGLE) = 0x3f;
+	A(ix, FIRE_TROPPER::FLAME_MOV_ID) = 2;
+	A(ix, FIRE_TROPPER::SpriteId) = 0x2c;
+	A(ix, FIRE_TROPPER::START_Y) = A(ix, FIRE_TROPPER::Y);
+	A(ix, FIRE_TROPPER::START_X) = A(ix, FIRE_TROPPER::X);
+	SetActorSpeed(ix, 0xfe00, 0);
+}
+
+
+uint16_t
+FlamePointer(uint16_t ix, uint8_t offset)
+{
+	uint16_t hl = static_cast<uint16_t>(ix + offset);
+	return static_cast<uint16_t>(Ram(hl) | (Ram(IncLow(hl)) << 8));
+}
+
+
+// The flames that are in the room: their count and addresses (last one
+// first, through the stack) after the Fire Trooper's structure.
+void
+FT_GetFlames(uint16_t ix)
+{
+	uint16_t flames[16];
+	int count = 0;
+	uint16_t hl = EnemyList;
+	for (int i = 0; i < 16; i++, hl = static_cast<uint16_t>(hl + 0x80)) {
+		if (Ram(hl) == ID_FLAME)
+			flames[count++] = hl;
+	}
+	if (count != 0) {
+		hl = static_cast<uint16_t>(ix | FIRE_TROPPER::NUM_FLAMES);
+		Ram(hl) = static_cast<uint8_t>(count);
+		hl = IncLow(hl);
+		for (int i = count - 1; i >= 0; i--) {
+			Ram(hl) = static_cast<uint8_t>(flames[i]);
+			hl = IncLow(hl);
+			Ram(hl) = static_cast<uint8_t>(flames[i] >> 8);
+			hl = IncLow(hl);
+		}
+	}
+	FT_MoveToPlayer(ix);
+	A(ix, FIRE_TROPPER::Status)++;
+}
+
+
+// Walks to his firing place; the flames gather at the flamethrower.
+void
+FT_Walk(uint16_t ix)
+{
+	Anim2FramesActor(ix, 3);
+	uint8_t x = A(ix, FIRE_TROPPER::X);
+	uint8_t limit;
+	if (x >= 0x80)
+		limit = 0x80;
+	else if (x >= 0x60)
+		return;
+	else
+		limit = 0x60;
+	A(ix, FIRE_TROPPER::X) = limit;
+	uint8_t y = A(ix, FIRE_TROPPER::Y);
+	A(ix, FIRE_TROPPER::START_Y) = y;
+	A(ix, FIRE_TROPPER::START_X) = limit;
+	A(ix, FIRE_TROPPER::SpriteId) = 0x2f;	// fires down
+	uint8_t flameY = static_cast<uint8_t>(y + 0x0b);
+	// (!?) the flames are taken to be actors 1, 2, ...
+	uint16_t hl = static_cast<uint16_t>(EnemyListEntry1 + 3);
+	int n = Loops(A(ix, FIRE_TROPPER::NUM_FLAMES));
+	for (int i = 0; i < n; i++) {
+		Ram(hl) = flameY;
+		hl = IncLow(hl, 2);
+		Ram(hl) = limit;
+		hl = static_cast<uint16_t>(hl + 0x7e);
+	}
+	SetActorSpeed(ix, 0, 0);
+	SetRam16(TempData, ix);
+	uint8_t flames = A(ix, FIRE_TROPPER::NUM_FLAMES);
+	for (int i = 0; i < Loops(flames); i++) {
+		uint8_t b = static_cast<uint8_t>(flames - i);	// DJNZ counts down
+		uint16_t flame = FlamePointer(ix, static_cast<uint8_t>(b * 2 + 0x3e));
+		A(flame, ACTOR::HiddenFlame) = 0;
+		A(flame, ACTOR::COLLISION_CFG) = 3;
+		SetSprColor(flame, 8, 0x46);	// visible
+	}
+	A(ix, FIRE_TROPPER::FLAME_JET_CNT) = 0x10;
+	A(ix, FIRE_TROPPER::Status)++;
+}
+
+
+// Places the flames along the jet: gaps from the Fire Trooper.
+void
+FT_MoveFlames11(uint16_t ix)
+{
+	uint16_t gaps = static_cast<uint16_t>(ix | FIRE_TROPPER::FLAME1_GAP_Y);
+	uint16_t hl = static_cast<uint16_t>((gaps & 0xff00) | ((gaps - 0x11) & 0xff));
+	int n = Loops(Ram(hl));
+	hl = IncLow(hl);
+	for (int i = 0; i < n; i++) {
+		uint16_t flame = static_cast<uint16_t>(Ram(hl) | (Ram(IncLow(hl)) << 8));
+		hl = IncLow(hl, 2);
+		uint8_t gapY = Ram(gaps);
+		A(flame, ACTOR::GAP_Y) = gapY;
+		gaps = IncLow(gaps);
+		Ram(IncLow(flame, 3)) = static_cast<uint8_t>(gapY + A(ix, FIRE_TROPPER::START_Y));
+		uint8_t gapX = Ram(gaps);
+		A(flame, ACTOR::GAP_X) = gapX;
+		gaps = IncLow(gaps);
+		Ram(IncLow(flame, 5)) = static_cast<uint8_t>(gapX + A(ix, FIRE_TROPPER::START_X));
+	}
+}
+
+
+void
+FT_ThrowFlames(uint16_t ix)
+{
+	if (--A(ix, FIRE_TROPPER::FLAME_JET_CNT) == 0) {
+		A(ix, FIRE_TROPPER::FLAME_JET_CNT) = 0x50;
+		A(ix, FIRE_TROPPER::Status)++;
+		return;
+	}
+	uint8_t gap = static_cast<uint8_t>(0x10 - A(ix, FIRE_TROPPER::FLAME_JET_CNT));
+	uint16_t hl = IncLow(ix, FIRE_TROPPER::FLAME1_GAP_Y);
+	int n = Loops(A(ix, FIRE_TROPPER::NUM_FLAMES));
+	uint8_t a = 0;
+	for (int i = 0; i < n; i++) {
+		a = static_cast<uint8_t>(a + gap);
+		Ram(hl) = a;
+		hl = IncLow(hl);
+		Ram(hl) = 0;
+		hl = IncLow(hl);
+	}
+	FT_MoveFlames11(ix);
+}
+
+
+// The jet sweeps from side to side.
+void
+FT_MoveFlames(uint16_t ix)
+{
+	if (--A(ix, FIRE_TROPPER::FLAME_JET_CNT) == 0) {
+		A(ix, FIRE_TROPPER::FLAME_JET_CNT)
+			= static_cast<uint8_t>(A(ix, FIRE_TROPPER::NUM_FLAMES) + 1);
+		A(ix, FIRE_TROPPER::Status)++;
+		return;
+	}
+	uint8_t delta = A(ix, FIRE_TROPPER::DELTA_);
+	uint8_t angle = static_cast<uint8_t>(delta + A(ix, FIRE_TROPPER::ANGLE));
+	A(ix, FIRE_TROPPER::ANGLE) = angle;
+	uint8_t limit = 0;
+	if (angle < 0x18)
+		limit = 0x18;
+	else if (angle >= 0x3f)
+		limit = 0x3f;
+	if (limit != 0) {
+		A(ix, FIRE_TROPPER::ANGLE) = limit;
+		A(ix, FIRE_TROPPER::DELTA_) = static_cast<uint8_t>(-delta);
+		A(ix, FIRE_TROPPER::FLAME_MOV_ID)
+			= static_cast<uint8_t>((A(ix, FIRE_TROPPER::FLAME_MOV_ID) + 1) & 3);
+	}
+	uint8_t moving = A(ix, FIRE_TROPPER::FLAME_MOV_ID);
+	uint8_t sprite = 0x2f;
+	if (A(ix, FIRE_TROPPER::ANGLE) < 0x2c)
+		sprite = moving == 1 || moving == 2 ? 0x2e : 0x30;
+	A(ix, FIRE_TROPPER::SpriteId) = sprite;
+
+	uint8_t sine, cosine;
+	GetFlameSinCos(ix, &sine, &cosine);
+	uint8_t gapX = static_cast<uint8_t>(cosine >> 4);
+	if (moving == 1 || moving == 2)
+		gapX = static_cast<uint8_t>(-gapX);
+	A(ix, FIRE_TROPPER::FLAME1_GAP_X) = gapX;
+	uint8_t gapY = static_cast<uint8_t>(sine >> 4);
+	A(ix, FIRE_TROPPER::FLAME1_GAP_Y) = gapY;
+
+	// (!?) one gap more than there are flames
+	uint8_t n = A(ix, FIRE_TROPPER::NUM_FLAMES);
+	int loops = Loops(n);
+	uint16_t de = IncLow(ix, FIRE_TROPPER::FLAME1_GAP_Y);
+	uint8_t c = Ram(de);
+	de = IncLow(de, 2);
+	uint8_t a = c;
+	for (int i = 0; i < loops; i++) {
+		a = static_cast<uint8_t>(a + c);
+		Ram(de) = a;
+		de = IncLow(de, 2);
+	}
+	de = static_cast<uint16_t>((de & 0xff00) | ((de - n * 2 + 1) & 0xff));
+	c = A(ix, FIRE_TROPPER::FLAME1_GAP_X);
+	a = c;
+	for (int i = 0; i < loops; i++) {
+		a = static_cast<uint8_t>(a + c);
+		Ram(de) = a;
+		de = IncLow(de, 2);
+	}
+	FT_MoveFlames11(ix);
+}
+
+
+// The flames go out one by one, then he walks again.
+void
+FT_BringInFlames(uint16_t ix)
+{
+	if (--A(ix, FIRE_TROPPER::FLAME_JET_CNT) == 0) {
+		InitFireTrooper2(ix);
+		FT_MoveToPlayer(ix);
+		SetActorStatus(ix, 1);
+		return;
+	}
+	uint8_t offset = static_cast<uint8_t>((A(ix, FIRE_TROPPER::FLAME_JET_CNT) - 1) * 2
+		+ FIRE_TROPPER::POINTERS);
+	uint16_t flame = FlamePointer(ix, offset);
+	A(flame, FIRE_TROPPER::field_72) = 1;	// hidden
+	A(flame, FIRE_TROPPER::COLLISION_CFG) = 0;
+	SetSprColor(flame, 0, 0);
+}
+
+}	// namespace
+
+
+void
+InitFireTrooper(uint16_t ix)
+{
+	if (Ram(FireTrooper_KO) != 0) {
+		DismissActor0(ix);
+		return;
+	}
+	A(ix, FIRE_TROPPER::DUMMY_CNT) = 2;
+	// (!?) counts Grey Fox, not Fire Troopers
+	if (CountEnemyType(ID_GREY_FOX) >= 2) {
+		DismissActor0(ix);
+		return;
+	}
+	SetBossMusic();
+	InitFireTrooper2(ix);
+}
+
+
+void
+FireTrooperLoogic(uint16_t ix)
+{
+	switch (A(ix, FIRE_TROPPER::Status)) {
+		case 0:	// "I'm Fire Trooper"
+			if (--A(ix, FIRE_TROPPER::DUMMY_CNT) != 0)
+				return;
+			A(ix, FIRE_TROPPER::Status)++;
+			SetTextUnskip2(108);
+			return;
+		case 1:
+			FT_GetFlames(ix);
+			return;
+		case 2:
+			FT_Walk(ix);
+			return;
+		case 3:
+			FT_ThrowFlames(ix);
+			return;
+		case 4:
+			FT_MoveFlames(ix);
+			return;
+		case 5:
+			FT_BringInFlames(ix);
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "FireTrooperLoogic: bad status";
 			return;
 	}
 }

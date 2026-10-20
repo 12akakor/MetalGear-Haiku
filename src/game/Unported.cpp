@@ -17,17 +17,11 @@
 	void name(uint16_t) { if (gUnported == NULL) gUnported = #name; }
 
 UNPORTED(InitEllenVoice)
-UNPORTED(InitScorpion)
 UNPORTED(InitBigBoss)
-UNPORTED(InitShotGunner)
-UNPORTED(InitMachGunKid)
-UNPORTED(InitFireTrooper)
 UNPORTED(InitCowardDuck)
-UNPORTED(InitShotGunnerShot)
 UNPORTED(InitCaptureScene)
 UNPORTED(InitPrisoner)
 UNPORTED(InitGuardSilencer)
-UNPORTED(InitMGunKidShot)
 UNPORTED(InitBoomerang)
 
 #include "Unported.h"
@@ -36,18 +30,12 @@ UNPORTED(InitBoomerang)
 	void name() { if (gUnported == NULL) gUnported = #name; }
 
 UNPORTED(ChkSayHelpMe)
-UNPORTED(ScorpionLogic)
 UNPORTED(BigBossLogic)
-UNPORTED(ShotGunnerLogic)
-UNPORTED(MachGunKidLogic)
-UNPORTED(FireTrooperLoogic)
 UNPORTED(CowardDuckLogic)
-UNPORTED(ShotGunnerShot)
 UNPORTED(CaptureGuardsLogic)
 UNPORTED(PrisonerLogic)
 UNPORTED(FakeMadnadLogic)
 UNPORTED(GuardSilencerLogic)
-UNPORTED(MGunKidShotLogic)
 UNPORTED(BoomerangLogic)
 UNPORTED0(ChkPasswords)
 UNPORTED0(ChkCharTyped)
