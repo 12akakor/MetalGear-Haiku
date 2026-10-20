@@ -442,3 +442,11 @@ ROUTINE(ChkSayHelpMe, "") { ChkSayHelpMe(in.ix); }
 ROUTINE(FakeMadnadLogic, "") { FakeMadnadLogic(in.ix); }
 ROUTINE(InitGuardSilencer, "") { InitGuardSilencer(in.ix); }
 ROUTINE(GuardSilencerLogic, "") { GuardSilencerLogic(in.ix); }
+
+#include "../../src/game/CaptureScene.h"
+ROUTINE(CaptureSceneLogic, "") { CaptureSceneLogic(); }
+ROUTINE(InitCaptureScene, "") { InitCaptureScene(in.ix); }
+ROUTINE(CaptureGuardsLogic, "") { CaptureGuardsLogic(in.ix); }
+
+#include "../../src/game/EquipMenu.h"
+ROUTINE(MenuEquip, "") { MenuEquip(); }

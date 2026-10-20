@@ -14,8 +14,6 @@ void		ChkPasswords();
 void		ChkCharTyped();
 void		EndingSetup();
 void		EndingLogic();
-void		MenuEquip();
-void		CaptureSceneLogic();
 
 
 #endif	// MG_UNPORTED_H

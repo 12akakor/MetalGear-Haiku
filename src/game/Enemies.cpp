@@ -9,6 +9,7 @@
 // RestLaserBack_, DrawMovingLasers; logic/collisions.asm BulletLogic).
 #include "Actors.h"
 
+#include "CaptureScene.h"
 #include "Common.h"
 #include "Bosses.h"
 #include "Cameras.h"

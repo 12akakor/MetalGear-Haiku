@@ -9,6 +9,7 @@
 // helperdirections.asm (GetDirToPlayer).
 #include "Actors.h"
 
+#include "CaptureScene.h"
 #include "Common.h"
 #include "Bosses.h"
 #include "Cameras.h"

@@ -11,6 +11,7 @@
 
 #include "Actors.h"
 #include "Checkpoints.h"
+#include "CaptureScene.h"
 #include "Common.h"
 #include "Contact.h"
 #include "Demo.h"
@@ -33,6 +34,7 @@
 #include "Structures.h"
 #include "Text.h"
 #include "ElevatorRoom.h"
+#include "EquipMenu.h"
 #include "Unported.h"
 #include "Weapons.h"
 

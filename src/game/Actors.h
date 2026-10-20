@@ -102,8 +102,6 @@ void		InitMetalGear(uint16_t ix);
 void		InitLaserRoom(uint16_t ix);
 
 // Not rewritten yet (Unported.cpp)
-void		InitCaptureScene(uint16_t ix);
-void		CaptureGuardsLogic(uint16_t ix);
 
 
 #endif	// MG_ACTORS_H
