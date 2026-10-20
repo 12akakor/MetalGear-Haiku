@@ -28,6 +28,10 @@ void		InitPowerSwitch(uint16_t ix);
 void		PowerSwitchLogic(uint16_t ix);
 void		InitGuardElevat(uint16_t ix);
 void		GuardElevator(uint16_t ix);
+void		InitDesertSecurity(uint16_t ix);
+void		DesertSecurityLogic(uint16_t ix);
+void		InitLorryShooter(uint16_t ix);
+void		LorryShooterLogic(uint16_t ix);
 
 
 #endif	// MG_SOLDIERS_H

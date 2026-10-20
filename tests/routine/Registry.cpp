@@ -403,3 +403,15 @@ ROUTINE(GuardElevator, "") { GuardElevator(in.ix); }
 #include "../../src/game/ElevatorRoom.h"
 ROUTINE(ElevatorRoomLogic, "") { ElevatorRoomLogic(); }
 ROUTINE(SetElevatorSpr, "") { SetElevatorSpr(); }
+
+#include "../../src/game/Hazards.h"
+ROUTINE(InitBridge, "") { InitBridge(in.ix); }
+ROUTINE(BridgeLogic, "") { BridgeLogic(in.ix); }
+ROUTINE(InitRollingBarrel, "") { InitRollingBarrel(in.ix); }
+ROUTINE(RollingBarrelLogic, "") { RollingBarrelLogic(in.ix); }
+ROUTINE(InitBulldozer, "") { InitBulldozer(in.ix); }
+ROUTINE(BulldozerLogic, "") { BulldozerLogic(in.ix); }
+ROUTINE(InitDesertSecurity, "") { InitDesertSecurity(in.ix); }
+ROUTINE(DesertSecurityLogic, "") { DesertSecurityLogic(in.ix); }
+ROUTINE(InitLorryShooter, "") { InitLorryShooter(in.ix); }
+ROUTINE(LorryShooterLogic, "") { LorryShooterLogic(in.ix); }

@@ -5,7 +5,8 @@
 
 
 // Rewritten from logic/actors/shooter.asm, jetpack.asm, guardswitch.asm,
-// powerswitch.asm and guardelevator.asm.
+// powerswitch.asm, guardelevator.asm, desertsecurity.asm and
+// lorryshooter.asm.
 #include "Soldiers.h"
 
 #include "Actors.h"
@@ -15,6 +16,7 @@
 #include "Text.h"
 #include "Guards.h"
 #include "Random.h"
+#include "Sprites.h"
 #include "Rom.h"
 #include "Structures.h"
 #include "Weapons.h"
@@ -818,6 +820,213 @@ GuardElevator(uint16_t ix)
 		default:
 			if (gUnported == NULL)
 				gUnported = "GuardElevator: bad status";
+			return;
+	}
+}
+
+
+// --- Desert security: the guards at building 2 let Snake in when he
+// wears the uniform (desertsecurity.asm) --------------------------------
+
+namespace {
+
+void
+ChkDesertGuardTxt(uint16_t ix)
+{
+	if (Ram(AlertMode) != 0)
+		return;
+	if (A(ix, ACTOR2::TIMER) == 0)
+		return;
+	if (--A(ix, ACTOR2::TIMER) != 0)
+		return;
+	if (Ram(DesertGuardsTextF) != 0)
+		return;
+	Ram(DesertGuardsTextF) = 1;
+	SetTextUnskippable(35);	// Probably, Foxhounder gained access...
+}
+
+
+void
+DesertSecurity2(uint16_t ix)
+{
+	if (Ram(SelectedItem) != SELECTED_UNIFORM) {
+		SetAlertModeRespawn(ix, 0x1e);
+		DismissActor0(ix);
+		return;
+	}
+	uint8_t door = A(ix, ACTOR2::DOOR_STATUS);
+	if (door == 0) {
+		A(ix, ACTOR2::DOOR_STATUS)++;
+		SetTextUnskippable(127);	// Come in
+		return;
+	}
+	if (door >= 2)
+		return;
+	Ram(DoorBuild2LockedF) = 1;	// the door opens
+	Ram(byte_C62D) = 1;
+	A(ix, ACTOR2::DOOR_STATUS)++;
+}
+
+
+// --- Guards in the lorries of the desert (lorryshooter.asm) -------------
+
+void
+LorrySetRndWait(uint16_t ix)
+{
+	A(ix, ACTOR::Wait) = static_cast<uint8_t>(((RefreshR() ^ A(ix, ACTOR::ANIM_CNT)) & 0x0f) + 1);
+}
+
+
+void
+LorShooterSetCol(uint16_t ix)
+{
+	A(ix, ACTOR::COLLISION_CFG) = 3;
+	A(ix, ACTOR::Spr1Color) = 2;
+	A(ix, ACTOR::Spr2Color) = 0x4d;
+	A(ix, ACTOR::Spr3Color) = 2;
+	A(ix, ACTOR::Spr4Color) = 0x4d;
+}
+
+
+void
+LorryShooterThink(uint16_t ix)
+{
+	if (--A(ix, ACTOR::Wait) != 0)
+		return;
+	uint8_t choice = GetRandom3(ix);
+	if (choice == 0) {
+		AddEnemyShot2(ix, ID_BULLET);	// from inside the lorry
+		return;
+	}
+	if (choice == 1) {
+		// shows up and shoots
+		A(ix, ACTOR::Status) = 1;
+		A(ix, ACTOR::Wait) = 0x1e;
+		GuardLookDirection(ix);
+		LorShooterSetCol(ix);
+		AddEnemyShot2(ix, ID_BULLET);
+		return;
+	}
+	A(ix, ACTOR::Status) = 2;	// gets out
+	A(ix, ACTOR::SpeedY) = 2;
+	A(ix, ACTOR::Moving)++;
+	A(ix, ACTOR::Wait) = 0x0a;
+	LorShooterSetCol(ix);
+}
+
+}	// namespace
+
+
+void
+InitDesertSecurity(uint16_t ix)
+{
+	StopAlert();
+	if (Ram(PreviousRoom) == 73) {
+		RemoveActor_(ix);	// Snake comes from building 2
+		return;
+	}
+	A(ix, ACTOR2::TIMER) = 0x10;
+	A(ix, ACTOR::COLLISION_CFG) = 0;
+}
+
+
+void
+DesertSecurityLogic(uint16_t ix)
+{
+	if (Ram(AlertMode) != 0) {
+		RemoveActor_(ix);
+		return;
+	}
+	ChkDesertGuardTxt(ix);
+	switch (A(ix, ACTOR2::Status)) {
+		case 0:
+		{
+			uint8_t x = Ram(PlayerX);
+			if (Ram(PlayerY) >= 128 || x < 0x38 || x >= 0xb8)
+				return;	// not near the guards
+			A(ix, ACTOR2::Status)++;
+			DesertSecurity2(ix);
+			return;
+		}
+		case 1:
+			DesertSecurity2(ix);
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "DesertSecurityLogic: bad status";
+			return;
+	}
+}
+
+
+void
+InitLorryShooter(uint16_t ix)
+{
+	HideSprColor(ix);
+	A(ix, ACTOR::COLLISION_CFG) = 0;
+	A(ix, ACTOR::Direction) = DIR_DOWN;
+	GuardLookDirection2(ix, DIR_DOWN);
+	if (Ram(GameMode) != GAME_MODE_BINOCULARS) {
+		Ram(AreaMusic) = 0x32;	// alert
+		SetSoundEntryChk(0x32);
+	}
+	LorrySetRndWait(ix);
+}
+
+
+void
+LorryShooterLogic(uint16_t ix)
+{
+	switch (A(ix, ACTOR::Status)) {
+		case 0:
+			LorryShooterThink(ix);
+			return;
+		case 1:	// waits, then back in
+			if (--A(ix, ACTOR::Wait) != 0)
+				return;
+			A(ix, ACTOR::Status) = 0;
+			A(ix, ACTOR::COLLISION_CFG) = 0;
+			HideSprColor(ix);
+			LorrySetRndWait(ix);
+			return;
+		case 2:	// walks out, then shoots
+		{
+			AnimateGuard2(ix, A(ix, ACTOR::Direction));
+			if (--A(ix, ACTOR::Wait) != 0)
+				return;
+			A(ix, ACTOR::Status) = 3;
+			A(ix, ACTOR::SpeedY) = 0;
+			A(ix, ACTOR::Wait) = 0x19;
+			uint8_t other;
+			uint8_t direction = GetDirToPlayer(ix, &other);
+			A(ix, ACTOR::Direction) = direction;
+			GuardLookDirection2(ix, direction);
+			AddEnemyShot2(ix, ID_BULLET);
+			return;
+		}
+		case 3:	// waits outside
+			if (--A(ix, ACTOR::Wait) != 0)
+				return;
+			A(ix, ACTOR::Status) = 4;
+			A(ix, ACTOR::SpeedY) = 0xfe;
+			A(ix, ACTOR::Direction) = DIR_UP;
+			A(ix, ACTOR::Wait) = 0x0a;
+			return;
+		case 4:	// walks back in
+			AnimateGuard2(ix, A(ix, ACTOR::Direction));
+			if (--A(ix, ACTOR::Wait) != 0)
+				return;
+			A(ix, ACTOR::Status) = 0;
+			A(ix, ACTOR::SpeedY) = 0;
+			A(ix, ACTOR::Moving) = 1;
+			A(ix, ACTOR::Direction) = DIR_DOWN;
+			A(ix, ACTOR::COLLISION_CFG) = 0;
+			HideSprColor(ix);
+			LorrySetRndWait(ix);
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "LorryShooterLogic: bad status";
 			return;
 	}
 }

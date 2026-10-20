@@ -14,6 +14,7 @@
 #include "Cameras.h"
 #include "Dogs.h"
 #include "Guards.h"
+#include "Hazards.h"
 #include "GfxBasic.h"
 #include "Random.h"
 #include "Rom.h"
