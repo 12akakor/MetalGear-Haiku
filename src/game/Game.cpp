@@ -32,6 +32,7 @@
 #include "Sprites.h"
 #include "Structures.h"
 #include "Text.h"
+#include "ElevatorRoom.h"
 #include "Unported.h"
 #include "Weapons.h"
 

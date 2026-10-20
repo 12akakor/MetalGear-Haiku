@@ -22,5 +22,12 @@ void		JetpackSwitchLogic(uint16_t ix);
 void		InitJetpack(uint16_t ix);
 void		JetpackLogic(uint16_t ix);
 
+void		InitGuardSwitch(uint16_t ix);
+void		GuardSwitchLogic(uint16_t ix);
+void		InitPowerSwitch(uint16_t ix);
+void		PowerSwitchLogic(uint16_t ix);
+void		InitGuardElevat(uint16_t ix);
+void		GuardElevator(uint16_t ix);
+
 
 #endif	// MG_SOLDIERS_H

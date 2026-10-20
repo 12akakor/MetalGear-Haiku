@@ -15,9 +15,7 @@ void		ChkPasswords();
 void		ChkCharTyped();
 void		EndingSetup();
 void		EndingLogic();
-void		SetElevatorSpr();
 void		MenuEquip();
-void		ElevatorRoomLogic();
 void		CaptureSceneLogic();
 
 

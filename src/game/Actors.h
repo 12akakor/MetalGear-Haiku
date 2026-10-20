@@ -73,6 +73,13 @@ uint16_t	Multiply8(uint8_t a, uint8_t b);
 void		InitDummy(uint16_t ix);
 // Actor logic (Enemies.cpp)
 void		EnemiesLogic();
+// The actor EnemiesLogic goes on with after the logic of the current one
+// (the original's IX, which some logic leaves on another actor).
+extern uint16_t gEnemyIX;
+// Set by logic that drops the return address of RunEnemyLogic: the
+// original then returns to an address in the BIOS (a RET there) and the
+// other actors are skipped this tick.
+extern bool gEnemiesLogicAbort;
 void		RunEnemyLogic(uint16_t ix);
 void		ChkEraseAlertSign();
 void		StunnedBounce(uint16_t ix);
@@ -97,10 +104,8 @@ void		InitLaserRoom(uint16_t ix);
 // Not rewritten yet (Unported.cpp)
 void		InitBridge(uint16_t ix);
 void		InitEllenVoice(uint16_t ix);
-void		InitGuardElevat(uint16_t ix);
 void		InitRollingBarrel(uint16_t ix);
 void		InitBulldozer(uint16_t ix);
-void		InitGuardSwitch(uint16_t ix);
 void		InitLorryShooter(uint16_t ix);
 void		InitScorpion(uint16_t ix);
 void		InitBigBoss(uint16_t ix);
@@ -109,7 +114,6 @@ void		InitMachGunKid(uint16_t ix);
 void		InitFireTrooper(uint16_t ix);
 void		InitCowardDuck(uint16_t ix);
 void		InitShotGunnerShot(uint16_t ix);
-void		InitPowerSwitch(uint16_t ix);
 void		InitCaptureScene(uint16_t ix);
 void		InitDesertSecurity(uint16_t ix);
 void		InitPrisoner(uint16_t ix);
@@ -118,10 +122,8 @@ void		InitMGunKidShot(uint16_t ix);
 void		InitBoomerang(uint16_t ix);
 void		BridgeLogic(uint16_t ix);
 void		ChkSayHelpMe(uint16_t ix);
-void		GuardElevator(uint16_t ix);
 void		RollingBarrelLogic(uint16_t ix);
 void		BulldozerLogic(uint16_t ix);
-void		GuardSwitchLogic(uint16_t ix);
 void		LorryShooterLogic(uint16_t ix);
 void		ScorpionLogic(uint16_t ix);
 void		BigBossLogic(uint16_t ix);
@@ -130,7 +132,6 @@ void		MachGunKidLogic(uint16_t ix);
 void		FireTrooperLoogic(uint16_t ix);
 void		CowardDuckLogic(uint16_t ix);
 void		ShotGunnerShot(uint16_t ix);
-void		PowerSwitchLogic(uint16_t ix);
 void		CaptureGuardsLogic(uint16_t ix);
 void		DesertSecurityLogic(uint16_t ix);
 void		PrisonerLogic(uint16_t ix);

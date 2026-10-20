@@ -340,6 +340,10 @@ DrawDestroyPowSw(uint16_t hl, uint8_t x, uint8_t y)
 }	// namespace
 
 
+uint16_t gEnemyIX = EnemyList;
+bool gEnemiesLogicAbort = false;
+
+
 void
 EnemiesLogic()
 {
@@ -354,7 +358,14 @@ EnemiesLogic()
 			StunnedBounce(ix);
 			continue;
 		}
+		gEnemyIX = ix;
+		gEnemiesLogicAbort = false;
 		RunEnemyLogic(ix);
+		if (gEnemiesLogicAbort) {
+			gEnemiesLogicAbort = false;
+			return;
+		}
+		ix = gEnemyIX;	// some logic leaves IX on another actor
 		MoveActor(ix);
 		ChkActorExitRoom(ix);
 	}

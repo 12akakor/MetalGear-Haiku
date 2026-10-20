@@ -85,6 +85,10 @@ main(int argc, char** argv)
 			gJoystick = (uint8_t)(~dm.machine.Joystick() & 0x3f);
 		}
 		uint8_t* ram = dm.machine.Ram();
+		if (warp > 0 && ram[0] == 5 && ram[var::Room - 0xc000] == 0xff) {
+			printf("tick %ld: the original went astray (room 255 after a warp)\n", t);
+			break;
+		}
 		if (warp > 0 && t - lastWarp >= warp && ram[var::GameStatus - 0xc000] == 5
 			&& ram[var::GameMode - 0xc000] == 0 && ram[var::Room - 0xc000] < 126
 			&& ram[var::PlayerControlMod - 0xc000] == 0) {
@@ -118,7 +122,7 @@ main(int argc, char** argv)
 			next++;
 		}
 		uint8_t status = dm.machine.Ram()[0], sub = dm.machine.Ram()[1];
-		if (getenv("MG_TRACE") != NULL && t % 250 == 0)
+		if (getenv("MG_TRACE") != NULL && (t % 250 == 0 || t >= atol(getenv("MG_TRACE"))))
 			printf("tick %ld: status %d,%d room %d mode %d control %d intro %d hold %02X\n", t, status, sub,
 				ram[var::Room - 0xc000], ram[var::GameMode - 0xc000],
 				ram[var::PlayerControlMod - 0xc000], ram[var::IntroSceneStatus - 0xc000], ram[var::ControlsHold - 0xc000]);
@@ -136,8 +140,21 @@ main(int argc, char** argv)
 			break;
 		}
 		snprintf(what, sizeof(what), "tick %ld (status %d,%d)", t, status, sub);
-		if (!dm.Compare(what))
+		if (!dm.Compare(what)) {
+			const char* dump = getenv("MG_DUMP");	/* "addr len" (hex, decimal) */
+			unsigned address = 0;
+			int length = 0;
+			if (dump != NULL && sscanf(dump, "%x %d", &address, &length) == 2) {
+				printf("  ref: ");
+				for (int i = 0; i < length; i++)
+					printf(" %02X", dm.machine.Ram()[address + i - 0xc000]);
+				printf("\n  port:");
+				for (int i = 0; i < length; i++)
+					printf(" %02X", gRam[address + i - 0xc000]);
+				printf("\n");
+			}
 			dm.CopyToNative();
+		}
 	}
 	printf("game status %d, room %d at the end\n", dm.machine.Ram()[0],
 		dm.machine.Ram()[var::Room - 0xc000]);

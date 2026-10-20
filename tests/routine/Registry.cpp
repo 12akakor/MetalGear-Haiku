@@ -393,3 +393,13 @@ ROUTINE(InitJetpackSwitch, "") { InitJetpackSwitch(in.ix); }
 ROUTINE(JetpackSwitchLogic, "") { JetpackSwitchLogic(in.ix); }
 ROUTINE(InitJetpack, "") { InitJetpack(in.ix); }
 ROUTINE(JetpackLogic, "") { JetpackLogic(in.ix); }
+ROUTINE(InitGuardSwitch, "") { InitGuardSwitch(in.ix); }
+ROUTINE(GuardSwitchLogic, "") { GuardSwitchLogic(in.ix); }
+ROUTINE(InitPowerSwitch, "") { InitPowerSwitch(in.ix); }
+ROUTINE(PowerSwitchLogic, "") { PowerSwitchLogic(in.ix); }
+ROUTINE(InitGuardElevat, "") { InitGuardElevat(in.ix); }
+ROUTINE(GuardElevator, "") { GuardElevator(in.ix); }
+
+#include "../../src/game/ElevatorRoom.h"
+ROUTINE(ElevatorRoomLogic, "") { ElevatorRoomLogic(); }
+ROUTINE(SetElevatorSpr, "") { SetElevatorSpr(); }
