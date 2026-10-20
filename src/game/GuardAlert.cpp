@@ -82,7 +82,7 @@ ContinueThisWay(uint16_t ix, uint8_t direction)
 void
 AddEnemyShot(uint16_t ix)
 {
-	AddEnemy(ID_GUARD_BULLET, static_cast<uint8_t>(A(ix, ACTOR::Y) - 0x10), A(ix, ACTOR::X));
+	AddEnemyShot2(ix, ID_GUARD_BULLET);
 }
 
 
@@ -270,6 +270,9 @@ ChkGuardWater(uint16_t ix)
 }
 
 
+}	// namespace
+
+
 // Rooms where the guards of an alert keep coming.
 void
 SetRespawnTime()
@@ -284,7 +287,12 @@ SetRespawnTime()
 	SetRam16(AlertRespawnTimer, timer);
 }
 
-}	// namespace
+
+void
+AddEnemyShot2(uint16_t ix, uint8_t id)
+{
+	AddEnemy(id, static_cast<uint8_t>(A(ix, ACTOR::Y) - 0x10), A(ix, ACTOR::X));
+}
 
 
 void

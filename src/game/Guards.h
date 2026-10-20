@@ -7,8 +7,9 @@
 
 
 // Guards on patrol, what guards and cameras see, raising the alarm
-// (logic/actors/guard.asm, chkdiscover.asm, guardlorry.asm, guardalert.asm
-// and the alert icon helpers of guardelevator.asm).
+// (logic/actors/guard.asm, chkdiscover.asm, guardlorry.asm, guardalert.asm,
+// sentinel.asm, elevatorguardspawner.asm and the alert icon helpers of
+// guardelevator.asm).
 
 #include <stdint.h>
 
@@ -19,6 +20,11 @@ void		GuardLogic(uint16_t ix);
 bool		ChkReachPoint(uint16_t ix);
 void		InitGuardLorry(uint16_t ix);
 void		GuardLorryLogic(uint16_t ix);
+
+void		InitSentinel(uint16_t ix);
+void		SentinelLogic(uint16_t ix);
+void		InitSpawnGuardElev(uint16_t ix);
+void		SpawnGuardElev(uint16_t ix);
 
 // Does the guard or camera see the player?
 void		ChkActSeePlayer(uint16_t ix);
@@ -41,6 +47,10 @@ void		GuardLookDirection2(uint16_t ix, uint8_t direction);
 // The larger of the X and Y distances to the player.
 uint8_t		GetDistancePlayer(uint16_t ix);
 uint8_t		GetRandom3(uint16_t ix);
+// Rooms where the guards of an alert keep coming back.
+void		SetRespawnTime();
+// A shot from 16 pixels above the actor.
+void		AddEnemyShot2(uint16_t ix, uint8_t id);
 
 void		SaveAlertIconBacknd(uint8_t sx, uint8_t sy);
 void		Draw16x16(uint8_t sx, uint8_t sy, uint8_t dx, uint8_t dy);

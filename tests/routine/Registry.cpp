@@ -366,3 +366,30 @@ ROUTINE(FlameOutScreen, "") { FlameOutScreen(in.ix); }
 
 #include "../../src/game/IntroScene.h"
 ROUTINE(IntroSceneLogic, "") { IntroSceneLogic(); }
+
+#include "../../src/game/Dogs.h"
+ROUTINE(InitSentinel, "") { InitSentinel(in.ix); }
+ROUTINE(SentinelLogic, "") { SentinelLogic(in.ix); }
+ROUTINE(InitSpawnGuardElev, "") { InitSpawnGuardElev(in.ix); }
+ROUTINE(SpawnGuardElev, "") { SpawnGuardElev(in.ix); }
+ROUTINE(InitDog, "") { InitDog(in.ix); }
+ROUTINE(DogLogic, "") { DogLogic(in.ix); }
+ROUTINE(InitDogBasement, "") { InitDogBasement(in.ix); }
+ROUTINE(DogBasementLogic, "") { DogBasementLogic(in.ix); }
+ROUTINE(InitSpawnDog, "") { InitSpawnDog(in.ix); }
+ROUTINE(SpawnDogLogic, "") { SpawnDogLogic(in.ix); }
+
+#include "../../src/game/Bosses.h"
+#include "../../src/game/Soldiers.h"
+ROUTINE(InitTank, "") { InitTank(in.ix); }
+ROUTINE(TankLogic, "") { TankLogic(in.ix); }
+ROUTINE(InitArnold, "") { InitArnold(in.ix); }
+ROUTINE(ArnoldLogic, "") { ArnoldLogic(in.ix); }
+ROUTINE(InitShooter, "") { InitShooter(in.ix); }
+ROUTINE(ShooterLogic, "") { ShooterLogic(in.ix); }
+ROUTINE(InitJetpackTakeoff, "") { InitJetpackTakeoff(in.ix); }
+ROUTINE(JetpacTakeoff, "") { JetpacTakeoff(in.ix); }
+ROUTINE(InitJetpackSwitch, "") { InitJetpackSwitch(in.ix); }
+ROUTINE(JetpackSwitchLogic, "") { JetpackSwitchLogic(in.ix); }
+ROUTINE(InitJetpack, "") { InitJetpack(in.ix); }
+ROUTINE(JetpackLogic, "") { JetpackLogic(in.ix); }

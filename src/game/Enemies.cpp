@@ -10,7 +10,9 @@
 #include "Actors.h"
 
 #include "Common.h"
+#include "Bosses.h"
 #include "Cameras.h"
+#include "Dogs.h"
 #include "Guards.h"
 #include "Items.h"
 #include "GameMain.h"
@@ -20,6 +22,7 @@
 #include "RoomGfx.h"
 #include "Rom.h"
 #include "Shots.h"
+#include "Soldiers.h"
 #include "RoomActors.h"
 #include "Sprites.h"
 #include "Structures.h"

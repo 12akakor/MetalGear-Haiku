@@ -569,3 +569,83 @@ GuardLorryLogic(uint16_t ix)
 	InitGuardLorry2(ix);
 	ResetActorStatus(ix);
 }
+
+
+// --- Sentinels: guards that stand and look around (sentinel.asm) --------
+
+void
+InitSentinel(uint16_t ix)
+{
+	uint8_t room = Ram(Room);
+	Ram(SleepyGuardFlag) = room == 140 ? 1 : 0;
+	if (room == 39)
+		HideGuardRoom39(ix);
+	if (room == 69) {
+		// 0: Snake comes from the desert, 1: from building 2
+		A(ix, ACTOR::DESERT_GUARD) = Ram(PreviousRoom) == 73 ? 0 : 1;
+	}
+	GetSentinelLookDirs(ix);
+}
+
+
+void
+SentinelLogic(uint16_t ix)
+{
+	if (A(ix, ACTOR::REMOVE_GUARD) != 0) {
+		RemoveActor_(ix);
+		return;
+	}
+	if (Ram(Room) != 69) {
+		if (Ram(SleepyGuardFlag) != 0) {
+			if (ListenShotsChkTouch(ix)) {
+				GuardSetAlarm(ix);
+				return;
+			}
+		} else {
+			ChkActSeePlayer(ix);
+		}
+	}
+	if (Ram(AlertMode) != 0) {
+		TransformAlertGuard(ix);
+		return;
+	}
+	if (--A(ix, ACTOR::SENTINEL_WAIT) != 0)
+		return;
+	uint8_t point = static_cast<uint8_t>(A(ix, ACTOR::idxPathPoint) + 1);
+	if (point >= A(ix, ACTOR::Cnt_NumPathPoints))
+		point = 0;
+	A(ix, ACTOR::idxPathPoint) = point;
+	uint16_t directions = static_cast<uint16_t>(A(ix, ACTOR::LookDirPointerLow)
+		| (A(ix, ACTOR::LookDirPointerHigh) << 8));
+	SetSentinelLookDir_(ix, Add16(directions, point));
+}
+
+
+// --- The guards that come out of the elevator (elevatorguardspawner.asm) -
+
+void
+InitSpawnGuardElev(uint16_t ix)
+{
+	A(ix, ELEV_GUARD_SPAWNER::COLLISION_CFG) = 0;
+	A(ix, ELEV_GUARD_SPAWNER::Wait) = 0x1e;
+	// coming from the elevator: soon; otherwise time for the guards to
+	// come, wait and leave
+	A(ix, ELEV_GUARD_SPAWNER::WaitLoops) = Ram(PreviousRoom) == 240 ? 5 : 0x13;
+}
+
+
+void
+SpawnGuardElev(uint16_t ix)
+{
+	if (Ram(AlertMode) != 0) {
+		DismissActor0(ix);
+		return;
+	}
+	if (--A(ix, ELEV_GUARD_SPAWNER::Wait) != 0)
+		return;
+	A(ix, ELEV_GUARD_SPAWNER::Wait) = 0x1e;
+	if (--A(ix, ELEV_GUARD_SPAWNER::WaitLoops) != 0)
+		return;
+	A(ix, ELEV_GUARD_SPAWNER::WaitLoops) = 0x17;
+	AddEnemy(ID_GUARD_ELEVATOR, 0x30, 0xf2);
+}
