@@ -101,7 +101,5 @@ void		DrawMovingLasers(uint16_t ix);
 void		InitMetalGear(uint16_t ix);
 void		InitLaserRoom(uint16_t ix);
 
-// Not rewritten yet (Unported.cpp)
-
 
 #endif	// MG_ACTORS_H

@@ -14,6 +14,9 @@
 
 void		RadioLogic();
 void		DrawRadio();
+// SEND or RECV on the radio, erasing the other
+void		PrintRecv();
+void		PrintSend();
 void		RadioSignalUp();
 void		DrawRadioFreq();
 void		DrawRadioLeds();

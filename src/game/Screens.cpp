@@ -21,7 +21,6 @@
 #include "Sprites.h"
 #include "Structures.h"
 #include "Text.h"
-#include "Unported.h"
 
 
 using namespace var;
@@ -41,6 +40,20 @@ ErasePrintTxt(uint16_t print, uint16_t erase)
 {
 	EraseTextXY(erase);
 	PrintTextXY(print);
+}
+
+
+void
+PrintRecv()
+{
+	ErasePrintTxt(SYM(txtRecv), SYM(txtSend));
+}
+
+
+void
+PrintSend()
+{
+	ErasePrintTxt(SYM(txtSend), SYM(txtRecv));
 }
 
 

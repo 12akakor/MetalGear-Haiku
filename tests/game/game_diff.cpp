@@ -69,6 +69,7 @@ main(int argc, char** argv)
 	char what[80];
 	int held = 0;
 	long holdUntil = 0, lastWarp = 0;
+	bool endingWarped = false;
 	for (long t = 0; t < ticks; t++) {
 		if (play && t > 900 && t >= holdUntil) {
 			static const uint8_t kMoves[] = { 0x01, 0x02, 0x04, 0x08, 0x05, 0x06,
@@ -113,6 +114,16 @@ main(int argc, char** argv)
 			ram[var::Life - 0xc000] = ram[var::MaxLife - 0xc000];
 			dm.CopyToNative();
 		}
+		/* MG_ENDING=tick: from that tick, the first moment in play jumps to the ending. */
+		if (getenv("MG_ENDING") != NULL && t >= atol(getenv("MG_ENDING")) && ram[0] == 5
+			&& ram[var::GameMode - 0xc000] == 0 && ram[var::EndingStatus - 0xc000] == 0
+			&& !endingWarped) {
+			endingWarped = true;
+			ram[0] = 8;
+			ram[1] = 0;
+			printf("tick %ld: to the ending\n", t);
+			dm.CopyToNative();
+		}
 		while (next < keys.size() && keys[next].tick == t) {
 			dm.machine.SetKey(keys[next].row, keys[next].bit, keys[next].down != 0);
 			if (keys[next].down)
@@ -126,7 +137,10 @@ main(int argc, char** argv)
 			printf("tick %ld: status %d,%d room %d mode %d control %d intro %d hold %02X\n", t, status, sub,
 				ram[var::Room - 0xc000], ram[var::GameMode - 0xc000],
 				ram[var::PlayerControlMod - 0xc000], ram[var::IntroSceneStatus - 0xc000], ram[var::ControlsHold - 0xc000]);
-		dm.Call(SYM(InterruptTick));
+		if (!dm.Call(SYM(InterruptTick)) && lastWarp > 0) {
+			printf("tick %ld: the original went astray (hangs after a warp)\n", t);
+			break;
+		}
 		size_t used = 0;
 		gRefreshHook = [&]() -> uint8_t {
 			return used < dm.refresh.size() ? dm.refresh[used++] : (used++, 0);

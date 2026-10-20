@@ -60,7 +60,8 @@ public:
 
 	/* Calls an original routine (interrupts off) with the banks the game
 	   has selected in its variables. */
-	void Call(uint16_t address, uint8_t a = 0)
+	/* False when the routine did not return. */
+	bool Call(uint16_t address, uint8_t a = 0)
 	{
 		Z80Regs& r = machine.Cpu().r;
 		set_mapper_from_variables();
@@ -82,8 +83,11 @@ public:
 			if (ldAR)
 				refresh.push_back(r.a);
 		}
-		if (guard >= 100000000)
+		if (guard >= 100000000) {
 			fprintf(stderr, "routine %04X did not return\n", address);
+			return false;
+		}
+		return true;
 	}
 
 	/* Copies the reference state to the native side. */

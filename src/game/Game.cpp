@@ -15,6 +15,7 @@
 #include "Common.h"
 #include "Contact.h"
 #include "Demo.h"
+#include "Ending.h"
 #include "Events.h"
 #include "Doors.h"
 #include "GameGfx.h"
@@ -36,7 +37,7 @@
 #include "ElevatorRoom.h"
 #include "EquipMenu.h"
 #include "Passwords.h"
-#include "Unported.h"
+#include "Ending.h"
 #include "Weapons.h"
 
 

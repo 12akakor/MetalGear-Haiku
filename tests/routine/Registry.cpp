@@ -454,3 +454,7 @@ ROUTINE(MenuEquip, "") { MenuEquip(); }
 #include "../../src/game/Passwords.h"
 ROUTINE(ChkCharTyped, "") { ChkCharTyped(); }
 ROUTINE(ChkPasswords, "") { ChkPasswords(); }
+
+#include "../../src/game/Ending.h"
+ROUTINE(EndingSetup, "") { EndingSetup(); }
+ROUTINE(EndingLogic, "") { EndingLogic(); }
