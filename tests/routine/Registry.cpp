@@ -450,3 +450,7 @@ ROUTINE(CaptureGuardsLogic, "") { CaptureGuardsLogic(in.ix); }
 
 #include "../../src/game/EquipMenu.h"
 ROUTINE(MenuEquip, "") { MenuEquip(); }
+
+#include "../../src/game/Passwords.h"
+ROUTINE(ChkCharTyped, "") { ChkCharTyped(); }
+ROUTINE(ChkPasswords, "") { ChkPasswords(); }

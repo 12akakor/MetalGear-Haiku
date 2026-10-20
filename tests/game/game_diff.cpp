@@ -156,6 +156,15 @@ main(int argc, char** argv)
 			dm.CopyToNative();
 		}
 	}
+	const char* show = getenv("MG_SHOW");	/* "addr len": RAM at the end */
+	unsigned showAddress = 0;
+	int showLength = 0;
+	if (show != NULL && sscanf(show, "%x %d", &showAddress, &showLength) == 2) {
+		printf("RAM %04X:", showAddress);
+		for (int i = 0; i < showLength; i++)
+			printf(" %02X", dm.machine.Ram()[showAddress + i - 0xc000]);
+		printf("\n");
+	}
 	printf("game status %d, room %d at the end\n", dm.machine.Ram()[0],
 		dm.machine.Ram()[var::Room - 0xc000]);
 	printf("%ld checks, %ld failures\n", dm.checks, dm.failures);

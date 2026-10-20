@@ -35,6 +35,7 @@
 #include "Text.h"
 #include "ElevatorRoom.h"
 #include "EquipMenu.h"
+#include "Passwords.h"
 #include "Unported.h"
 #include "Weapons.h"
 

@@ -10,8 +10,6 @@
 
 // Routines without arguments that are not rewritten yet (Unported.cpp).
 
-void		ChkPasswords();
-void		ChkCharTyped();
 void		EndingSetup();
 void		EndingLogic();
 

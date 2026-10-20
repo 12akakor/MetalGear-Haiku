@@ -22,7 +22,5 @@
 #define UNPORTED0(name) \
 	void name() { if (gUnported == NULL) gUnported = #name; }
 
-UNPORTED0(ChkPasswords)
-UNPORTED0(ChkCharTyped)
 UNPORTED0(EndingSetup)
 UNPORTED0(EndingLogic)
