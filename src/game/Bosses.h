@@ -28,6 +28,12 @@ void		InitShotGunnerShot(uint16_t ix);
 void		ShotGunnerShot(uint16_t ix);
 void		InitFireTrooper(uint16_t ix);
 void		FireTrooperLoogic(uint16_t ix);
+void		InitBigBoss(uint16_t ix);
+void		BigBossLogic(uint16_t ix);
+void		InitCowardDuck(uint16_t ix);
+void		CowardDuckLogic(uint16_t ix);
+void		InitBoomerang(uint16_t ix);
+void		BoomerangLogic(uint16_t ix);
 
 
 #endif	// MG_BOSSES_H

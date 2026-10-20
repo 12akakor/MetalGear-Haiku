@@ -5,7 +5,8 @@
 
 
 // Rewritten from logic/actors/tank.asm, arnold.asm, scorpion.asm,
-// machinegunkid.asm, shotgunner.asm and firetropper.asm.
+// machinegunkid.asm, shotgunner.asm, firetropper.asm, bigboss.asm and
+// cowardduck.asm.
 #include "Bosses.h"
 
 #include "Actors.h"
@@ -1117,4 +1118,420 @@ FireTrooperLoogic(uint16_t ix)
 				gUnported = "FireTrooperLoogic: bad status";
 			return;
 	}
+}
+
+
+// --- Big Boss (bigboss.asm): runs between the crates and shoots ------------
+
+namespace {
+
+// In the upper or lower corridor (the original's Z flag).
+bool
+BBChkUpDownCorridors(uint16_t ix)
+{
+	uint8_t y = A(ix, BIG_BOSS::Y);
+	return y == 56 || y == 168;
+}
+
+
+void
+BigBossSetSpr2(uint16_t ix, uint8_t direction)
+{
+	uint8_t sprite = static_cast<uint8_t>(direction * 2 + 0x3f);
+	if ((A(ix, BIG_BOSS::ANIM_CNT) & 2) == 0)
+		sprite++;
+	A(ix, BIG_BOSS::SpriteId) = sprite;
+}
+
+
+void
+BigBossSetSpr(uint16_t ix)
+{
+	BigBossSetSpr2(ix, A(ix, BIG_BOSS::Direction));
+}
+
+
+void
+BigBossSetSpeed(uint16_t ix, uint8_t direction)
+{
+	SetWalkSpeedFast2(ix, direction);
+	A(ix, BIG_BOSS::SpeedY) = static_cast<uint8_t>(A(ix, BIG_BOSS::SpeedY) << 1);
+	A(ix, BIG_BOSS::SpeedX) = static_cast<uint8_t>(A(ix, BIG_BOSS::SpeedX) << 1);
+}
+
+
+void
+BigBossSetDir(uint16_t ix, uint8_t direction)
+{
+	A(ix, BIG_BOSS::Direction) = direction;
+	BigBossSetSpeed(ix, direction);
+}
+
+
+// Faces Snake from behind the crate (the sprite only).
+void
+BBAimToPlayer(uint16_t ix)
+{
+	uint8_t a, b;
+	if (BBChkUpDownCorridors(ix)) {
+		a = A(ix, BIG_BOSS::Y);
+		b = 2;
+	} else {
+		a = A(ix, BIG_BOSS::X);
+		b = 4;
+	}
+	BigBossSetSpr2(ix, static_cast<uint8_t>(b - (a >> 7)));
+}
+
+
+void
+BigBossCalcAway(uint16_t ix)
+{
+	if (BBChkUpDownCorridors(ix))
+		BigBossSetDir(ix, Ram(PlayerX) < A(ix, BIG_BOSS::X) ? DIR_RIGHT : DIR_LEFT);
+	else
+		BigBossSetDir(ix, Ram(PlayerY) < A(ix, BIG_BOSS::Y) ? DIR_DOWN : DIR_UP);
+}
+
+
+void
+BBSetDirToPlayer(uint16_t ix)
+{
+	if (BBChkUpDownCorridors(ix))
+		BigBossSetDir(ix, Ram(PlayerX) < A(ix, BIG_BOSS::X) ? DIR_LEFT : DIR_RIGHT);
+	else
+		BigBossSetDir(ix, Ram(PlayerY) < A(ix, BIG_BOSS::Y) ? DIR_UP : DIR_DOWN);
+}
+
+
+void
+BBChkTurnCorner(uint16_t ix)
+{
+	if (A(ix, BIG_BOSS::SpeedY) != 0) {
+		uint8_t y = A(ix, BIG_BOSS::Y);
+		if (y != 56 && y != 168)
+			return;
+		BigBossSetDir(ix, (A(ix, BIG_BOSS::X) & 0x80) == 0 ? DIR_RIGHT : DIR_LEFT);
+		return;
+	}
+	uint8_t x = A(ix, BIG_BOSS::X);
+	if (x != 24 && x != 200)
+		return;
+	BigBossSetDir(ix, (A(ix, BIG_BOSS::Y) & 0x80) == 0 ? DIR_DOWN : DIR_UP);
+}
+
+
+void
+SetRandomWait1_20(uint16_t ix)
+{
+	A(ix, BIG_BOSS::Wait) = static_cast<uint8_t>(((RefreshR() ^ A(ix, BIG_BOSS::ANIM_CNT)) & 0x1f)
+		+ 1);
+}
+
+
+// Behind a crate (the original's Z flag).
+bool
+BBChkCovered(uint16_t ix)
+{
+	if (BBChkUpDownCorridors(ix)) {
+		uint8_t x = A(ix, BIG_BOSS::X);
+		return x == 0x30 || x == 0x70 || x == 0xb0;
+	}
+	uint8_t y = A(ix, BIG_BOSS::Y);
+	return y == 0x58 || y == 0x98;
+}
+
+
+bool
+BBChkPlayerNear(uint16_t ix)
+{
+	if (static_cast<uint8_t>(Ram(PlayerX) - A(ix, BIG_BOSS::X) + 0x48) >= 0x91)
+		return false;
+	return static_cast<uint8_t>(Ram(PlayerY) - A(ix, BIG_BOSS::Y) + 0x48) < 0x91;
+}
+
+
+// In the same row or column of crates as Snake.
+bool
+BBChkShoot(uint16_t ix)
+{
+	uint8_t distance = BBChkUpDownCorridors(ix)
+		? static_cast<uint8_t>(Ram(PlayerX) - A(ix, BIG_BOSS::X))
+		: static_cast<uint8_t>(Ram(PlayerY) - A(ix, BIG_BOSS::Y));
+	return static_cast<uint8_t>(distance + 0x30) < 0x61;
+}
+
+
+void
+BigBossSetRunAway(uint16_t ix)
+{
+	A(ix, BIG_BOSS::Status) = 2;
+	A(ix, BIG_BOSS::Moving) = 1;
+	BigBossCalcAway(ix);
+	BigBossSetSpr(ix);
+}
+
+
+void
+BigBossThink(uint16_t ix)
+{
+	if (BBChkPlayerNear(ix)) {
+		BigBossSetRunAway(ix);
+		return;
+	}
+	if (!BBChkShoot(ix)) {
+		A(ix, BIG_BOSS::Status) = 2;	// runs
+		A(ix, BIG_BOSS::Moving) = 1;
+		A(ix, BIG_BOSS::Dummy) = 2;	// (!?) not used
+		BBSetDirToPlayer(ix);
+		BigBossSetSpr(ix);
+		return;
+	}
+	if (--A(ix, BIG_BOSS::Wait) != 0)
+		return;
+	A(ix, BIG_BOSS::Status) = 3;	// shows up to shoot
+	A(ix, BIG_BOSS::Moving) = 1;
+	A(ix, BIG_BOSS::Wait) = 5;
+	BBSetDirToPlayer(ix);
+	BigBossSetSpr(ix);
+}
+
+
+void
+BigBossRun(uint16_t ix)
+{
+	BigBossSetSpr(ix);
+	BBChkTurnCorner(ix);
+	if (!BBChkCovered(ix))
+		return;
+	if (BBChkPlayerNear(ix)) {
+		BigBossSetRunAway(ix);
+		return;
+	}
+	if (!BBChkShoot(ix))
+		return;
+	A(ix, BIG_BOSS::Status) = 1;
+	A(ix, BIG_BOSS::Moving) = 0;
+	BBAimToPlayer(ix);
+}
+
+
+void
+BB_Shoot(uint16_t ix)
+{
+	if (--A(ix, BIG_BOSS::Wait) != 0)
+		return;
+	A(ix, BIG_BOSS::Status) = 5;	// back behind the crate
+	A(ix, BIG_BOSS::Moving) = 1;
+	uint8_t direction = GetOppositeDir(A(ix, BIG_BOSS::Direction));
+	A(ix, BIG_BOSS::Direction) = direction;
+	BigBossSetSpeed(ix, direction);
+	AddEnemyShot2(ix, BBChkUpDownCorridors(ix) ? ID_BULLET_VERT : ID_BULLET_HORIZ);
+}
+
+}	// namespace
+
+
+void
+InitBigBoss(uint16_t ix)
+{
+	if ((Ram(BigBossStat) & 1) != 0) {
+		DismissActor(ix);	// defeated
+		return;
+	}
+	A(ix, BIG_BOSS::Wait) = 2;
+	ResetActorSpeed(ix);
+	A(ix, BIG_BOSS::Direction) = DIR_RIGHT;
+	BigBossSetSpr(ix);
+}
+
+
+void
+BigBossLogic(uint16_t ix)
+{
+	switch (A(ix, BIG_BOSS::Status)) {
+		case 0:	// the confession
+			if (--A(ix, BIG_BOSS::Wait) != 0)
+				return;
+			A(ix, BIG_BOSS::Status) = 1;
+			SetRandomWait1_20(ix);
+			if ((Ram(BigBossStat) & 2) != 0)
+				return;
+			Ram(BigBossStat) |= 2;
+			SetTextUnskip2(147);
+			return;
+		case 1:
+			BigBossThink(ix);
+			return;
+		case 2:
+			BigBossRun(ix);
+			return;
+		case 3:	// shows up from a crate
+			BigBossSetSpr(ix);
+			if (--A(ix, BIG_BOSS::Wait) != 0)
+				return;
+			A(ix, BIG_BOSS::Status) = 4;
+			A(ix, BIG_BOSS::Moving) = 0;
+			A(ix, BIG_BOSS::Wait) = 5;
+			BBAimToPlayer(ix);
+			return;
+		case 4:
+			BB_Shoot(ix);
+			return;
+		case 5:	// takes cover
+			BigBossSetSpr(ix);
+			if (!BBChkCovered(ix))
+				return;
+			A(ix, BIG_BOSS::Status) = 1;
+			A(ix, BIG_BOSS::Moving) = 0;
+			SetRandomWait1_20(ix);
+			BBAimToPlayer(ix);
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "BigBossLogic: bad status";
+			return;
+	}
+}
+
+
+// --- Coward Duck and his boomerangs (cowardduck.asm) ---------------------
+
+void
+InitCowardDuck(uint16_t ix)
+{
+	if (Ram(Card8Taken) != 0) {
+		DismissActor0(ix);
+		return;
+	}
+	A(ix, COWARD_D::SpriteId) = 0x18;	// walks
+	A(ix, COWARD_D::TIMER) = 3;
+	A(ix, COWARD_D::MOVING)++;
+	SetBossMusic();
+}
+
+
+void
+CowardDuckLogic(uint16_t ix)
+{
+	switch (A(ix, ACTOR::Status)) {
+		case 0:	// "I'm Coward Duck"
+			if (--A(ix, COWARD_D::TIMER) != 0)
+				return;
+			if (Ram(CowardDuckSpeech) == 0) {
+				Ram(CowardDuckSpeech) = 1;
+				SetTextUnskippable(139);
+			}
+			A(ix, COWARD_D::TIMER) = 0x10;
+			A(ix, COWARD_D::Status)++;
+			return;
+		case 1:	// walks towards Snake's side
+			if (--A(ix, COWARD_D::TIMER) != 0)
+				return;
+			A(ix, COWARD_D::TIMER) = 8;
+			SetActorSpeedX(ix, Ram(PlayerX) >= A(ix, COWARD_D::X) ? 0x200 : 0xfe00);
+			A(ix, COWARD_D::Status)++;
+			return;
+		case 2:	// then throws a boomerang
+			Anim2FramesActor(ix, 7);
+			if (--A(ix, COWARD_D::TIMER) != 0)
+				return;
+			A(ix, COWARD_D::TIMER) = 5;
+			A(ix, COWARD_D::SpriteId) = 0x1a;
+			SetActorSpeedX(ix, 0);
+			A(ix, COWARD_D::Status)++;
+			AddEnemy(ID_BOOMERANG, static_cast<uint8_t>(A(ix, COWARD_D::Y) - 0x10),
+				A(ix, COWARD_D::X));
+			return;
+		case 3:	// back to the middle
+			if (--A(ix, COWARD_D::TIMER) != 0)
+				return;
+			A(ix, COWARD_D::TIMER) = 8;
+			A(ix, ACTOR::SpriteId) = 0x18;
+			SetActorSpeedX(ix, A(ix, COWARD_D::X) >= 0x80 ? 0xfe00 : 0x200);
+			A(ix, COWARD_D::Status)++;
+			return;
+		case 4:
+			Anim2FramesActor(ix, 7);
+			if (--A(ix, COWARD_D::TIMER) != 0)
+				return;
+			A(ix, COWARD_D::TIMER) = 8;
+			SetActorSpeedX(ix, 0);
+			A(ix, COWARD_D::Status) = 1;
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "CowardDuckLogic: bad status";
+			return;
+	}
+}
+
+
+// The boomerang flies along an ellipse around where it was thrown.
+void
+InitBoomerang(uint16_t ix)
+{
+	SetSoundEntryChk(6);
+	A(ix, BOOMERANG::START_Y) = A(ix, BOOMERANG::Y);
+	uint8_t x = A(ix, BOOMERANG::X);
+	A(ix, BOOMERANG::START_X) = x;
+	A(ix, BOOMERANG::COUNTER) = x >= 0x80 ? 0 : 2;	// clockwise or not
+	A(ix, BOOMERANG::SHORT_RANGE) = RefreshR() & 1;
+	A(ix, BOOMERANG::SpriteId) = 0x77;
+	A(ix, BOOMERANG::ANGLE_Y) = 64;
+	A(ix, BOOMERANG::ANGLE_DELTA_Y) = 0xfe;
+	A(ix, BOOMERANG::ANGLE_X) = 64;
+	A(ix, BOOMERANG::ANGLE_DELTA_X) = 0xfc;
+}
+
+
+void
+BoomerangLogic(uint16_t ix)
+{
+	if ((A(ix, BOOMERANG::ANIM_CNT) & 1) == 0) {
+		uint8_t spin = static_cast<uint8_t>(A(ix, BOOMERANG::SPIN_CNT) + 1);
+		if (spin >= 3)
+			spin = 0;
+		A(ix, BOOMERANG::SPIN_CNT) = spin;
+		A(ix, BOOMERANG::SpriteId) = static_cast<uint8_t>(spin + 0x77);
+	}
+
+	uint8_t angle = static_cast<uint8_t>(A(ix, BOOMERANG::ANGLE_Y)
+		+ A(ix, BOOMERANG::ANGLE_DELTA_Y));
+	A(ix, BOOMERANG::ANGLE_Y) = angle;
+	if (angle >= 64) {
+		// down, up, then back to Coward Duck. (!?) GetSinCos then gets
+		// what is left in A, not the angle
+		uint8_t delta = static_cast<uint8_t>(-A(ix, BOOMERANG::ANGLE_DELTA_Y));
+		A(ix, BOOMERANG::ANGLE_DELTA_Y) = delta;
+		angle = static_cast<uint8_t>(delta + 2);
+		if (angle == 0) {
+			DismissActor0(ix);
+			// A as RemoveActor_ leaves it
+			uint8_t sprites = Ram(static_cast<uint16_t>(ix | 0x20));
+			angle = sprites == 0 ? 0
+				: static_cast<uint8_t>((ix & 0xff) + 0x21 + 5 * sprites);
+		}
+	}
+	uint8_t sine, cosine;
+	GetSinCos(angle, &sine, &cosine);
+	uint8_t radius = static_cast<uint8_t>(cosine >> 1);
+	if (A(ix, BOOMERANG::SHORT_RANGE) != 0)
+		radius >>= 1;
+	A(ix, BOOMERANG::Y) = static_cast<uint8_t>(A(ix, BOOMERANG::START_Y) + radius);
+
+	angle = static_cast<uint8_t>(A(ix, BOOMERANG::ANGLE_X) + A(ix, BOOMERANG::ANGLE_DELTA_X));
+	A(ix, BOOMERANG::ANGLE_X) = angle;
+	if (angle >= 0x40) {
+		uint8_t delta = static_cast<uint8_t>(-A(ix, BOOMERANG::ANGLE_DELTA_X));
+		A(ix, BOOMERANG::ANGLE_DELTA_X) = delta;
+		A(ix, BOOMERANG::COUNTER)++;
+		angle = delta;	// (!?) as above
+	}
+	GetSinCos(angle, &sine, &cosine);
+	uint8_t offset = static_cast<uint8_t>(cosine >> 2);
+	uint8_t counter = A(ix, BOOMERANG::COUNTER);
+	if (counter >= 2 && counter < 4)
+		offset = static_cast<uint8_t>(-offset);
+	A(ix, BOOMERANG::X) = static_cast<uint8_t>(A(ix, BOOMERANG::START_X) + offset);
 }

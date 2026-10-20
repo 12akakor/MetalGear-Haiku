@@ -427,3 +427,9 @@ ROUTINE(InitShotGunnerShot, "") { InitShotGunnerShot(in.ix); }
 ROUTINE(ShotGunnerShot, "") { ShotGunnerShot(in.ix); }
 ROUTINE(InitFireTrooper, "") { InitFireTrooper(in.ix); }
 ROUTINE(FireTrooperLoogic, "") { FireTrooperLoogic(in.ix); }
+ROUTINE(InitBigBoss, "") { InitBigBoss(in.ix); }
+ROUTINE(BigBossLogic, "") { BigBossLogic(in.ix); }
+ROUTINE(InitCowardDuck, "") { InitCowardDuck(in.ix); }
+ROUTINE(CowardDuckLogic, "") { CowardDuckLogic(in.ix); }
+ROUTINE(InitBoomerang, "") { InitBoomerang(in.ix); }
+ROUTINE(BoomerangLogic, "") { BoomerangLogic(in.ix); }
