@@ -14,6 +14,7 @@
 #include "GfxBasic.h"
 #include "Hud.h"
 #include "Rom.h"
+#include "RoomActors.h"
 #include "Screens.h"
 #include "Structures.h"
 #include "Unported.h"

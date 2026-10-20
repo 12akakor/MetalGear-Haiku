@@ -17,6 +17,7 @@
 #include "Items.h"
 #include "RoomGfx.h"
 #include "Rom.h"
+#include "RoomActors.h"
 #include "Sprites.h"
 #include "Structures.h"
 #include "Text.h"
@@ -403,7 +404,7 @@ RenderScreen()
 		DrawLaserBeams();
 		SetBanks1_2_3();
 		SetBankInA0(0x0c);
-		ChkDrawMetalGear();
+		ChkDrawMetalGear(EnemyList);	// IX of the caller (to check)
 		SetBanks1_2_3();
 	}
 	DrawMines();

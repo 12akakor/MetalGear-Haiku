@@ -10,17 +10,8 @@
 
 // Routines without arguments that are not rewritten yet (Unported.cpp).
 
-void		DrawOpenPitfalls();
 void		IntroSceneLogic();
-void		DrawLaserBeams();
-void		ChkDrawMetalGear();
-void		DrawMines();
-void		ChkDrawHindD();
-void		DrawCameras();
 void		SetBulldozerKO();
-void		RestLasersBack();
-// Mine background: returns DE (destination), *sx.
-uint16_t	GetMineBackXY(uint8_t x, uint8_t y, uint8_t* sx);
 void		ChkPasswords();
 void		ChkCharTyped();
 void		EndingSetup();

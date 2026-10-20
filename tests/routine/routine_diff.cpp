@@ -23,6 +23,8 @@
  * -doors: now and then a closed door of the room starts opening.
  * -items: now and then an item appears under Snake.
  * -max: checks per routine (default 300).
+ * -dump addr n: on a failure, show n bytes from addr (hex) before, in the
+ * original and in the rewrite.
  */
 #include "RoutineDiff.h"
 
@@ -71,6 +73,8 @@ std::vector<Entry> sEntries;
 long sMaxChecks = 300;
 bool sInProbe = false;
 long sTotalFailures = 0;
+int sDumpAddress = 0xc000;
+int sDumpLength = 0;
 
 
 void
@@ -247,6 +251,19 @@ Check(Entry& entry)
 			in.bc, in.de, in.hl, in.ix, sMain.Bank(1), sMain.Bank(2), sMain.Bank(3),
 			ram[var::BankIn60 - 0xc000], ram[var::BankIn80 - 0xc000],
 			ram[var::BankInA0 - 0xc000], ram[var::Room - 0xc000], report.c_str());
+		if (sDumpLength > 0) {
+			const uint8_t* ref = sProbe.Ram();
+			printf("  before:");
+			for (int i = 0; i < sDumpLength; i++)
+				printf(" %02X", ram[sDumpAddress + i - 0xc000]);
+			printf("\n  ref:   ");
+			for (int i = 0; i < sDumpLength; i++)
+				printf(" %02X", ref[sDumpAddress + i - 0xc000]);
+			printf("\n  port:  ");
+			for (int i = 0; i < sDumpLength; i++)
+				printf(" %02X", gRam[sDumpAddress + i - 0xc000]);
+			printf("\n");
+		}
 	}
 }
 
@@ -320,7 +337,10 @@ main(int argc, char** argv)
 			warp = atol(argv[++i]);
 		else if (!strcmp(argv[i], "-seed") && i + 1 < argc)
 			seed = static_cast<unsigned>(atol(argv[++i]));
-		else if (!strcmp(argv[i], "-max") && i + 1 < argc)
+		else if (!strcmp(argv[i], "-dump") && i + 2 < argc) {
+			sDumpAddress = static_cast<int>(strtol(argv[++i], NULL, 16));
+			sDumpLength = atoi(argv[++i]);
+		} else if (!strcmp(argv[i], "-max") && i + 1 < argc)
 			sMaxChecks = atol(argv[++i]);
 		else
 			only.push_back(argv[i]);

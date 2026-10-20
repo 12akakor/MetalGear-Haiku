@@ -10,9 +10,12 @@
 #include "Actors.h"
 
 #include "Common.h"
+#include "Cameras.h"
+#include "Guards.h"
 #include "GfxBasic.h"
 #include "Random.h"
 #include "Rom.h"
+#include "RoomActors.h"
 #include "Sprites.h"
 #include "Structures.h"
 
@@ -322,7 +325,7 @@ TransformAlertGuard2(uint16_t ix, uint8_t id)
 	A(ix, ACTOR::X) &= 0xfe;
 	uint8_t other;
 	A(ix, ACTOR::Direction) = GetDirToPlayer(ix, &other);
-	AnimateGuard2(ix);
+	AnimateGuard2(ix, A(ix, ACTOR::Direction));
 	SetActorSprColors(ix);
 }
 
@@ -377,6 +380,11 @@ InitGuardPath(uint16_t ix)
 
 namespace {
 
+// Set by HideGuardSpr: SetSprColor leaves B = 0, so InitGuardPath2 goes
+// on with path index 0 (a path from the bytes before the room's list).
+bool sHiddenGuard = false;
+
+
 // HideGuardRoom...: guards that would stand right where Snake comes in
 // are removed. They return what the original leaves in A, which the
 // chain in InitGuardPath2 goes on comparing with.
@@ -387,6 +395,7 @@ HideGuardSpr(uint16_t ix)
 	A(ix, ACTOR::COLLISION_CFG) = 0;
 	A(ix, ACTOR::NumSprites) = 0;
 	HideSprColor(ix);	// with 0 sprites it does nothing
+	sHiddenGuard = true;
 	return 0;
 }
 
@@ -496,6 +505,7 @@ InitGuardPath2(uint16_t ix, uint8_t index)
 {
 	uint8_t d = Ram(NextRoomDirect);
 	uint8_t e = Ram(PreviousRoom);
+	sHiddenGuard = false;
 	uint8_t a = static_cast<uint8_t>(Ram(Room) - 1);
 	if (a == 0)
 		a = HideGuardRoom1(ix, d);
@@ -520,6 +530,8 @@ InitGuardPath2(uint16_t ix, uint8_t index)
 	if (a == 13)
 		HideGuardRoom35(ix, e);
 	A(ix, ACTOR::SpriteId) = 0;
+	if (sHiddenGuard)
+		index = 0;
 	GetPathPoints(ix, index);
 }
 

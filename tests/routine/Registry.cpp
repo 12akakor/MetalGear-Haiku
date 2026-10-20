@@ -308,3 +308,35 @@ ROUTINE(ChkLorryMov, "") { ChkLorryMov(); }
 ROUTINE(LorryMoving, "") { LorryMoving(); }
 ROUTINE(ChkMadnarMsx, "") { ChkMadnarMsx(); }
 ROUTINE(chkMadnarLate, "") { chkMadnarLate(); }
+
+#include "../../src/game/Guards.h"
+ROUTINE(GuardLogic, "") { GuardLogic(in.ix); }
+ROUTINE(InitGuardLorry, "") { InitGuardLorry(in.ix); }
+ROUTINE(GuardLorryLogic, "") { GuardLorryLogic(in.ix); }
+ROUTINE(ChkActSeePlayer, "") { ChkActSeePlayer(in.ix); }
+ROUTINE(GuardSetAlarm, "") { GuardSetAlarm(in.ix); }
+ROUTINE(ListenShotsChkTouch, "cf") { SetCarry(out, ListenShotsChkTouch(in.ix)); }
+
+#include "../../src/game/RoomActors.h"
+ROUTINE(DrawLaserBeams, "") { DrawLaserBeams(); }
+ROUTINE(RestLasersBack, "") { RestLasersBack(); }
+ROUTINE(RenderCamera, "") { RenderCamera(in.ix); }
+ROUTINE(DrawCameras, "") { DrawCameras(); }
+ROUTINE(InitMines, "") { InitMines(in.ix); }
+ROUTINE(DrawMines, "") { DrawMines(); }
+ROUTINE(InitPitfall, "") { InitPitfall(in.ix); }
+ROUTINE(PitfallLogic, "") { PitfallLogic(in.ix); }
+ROUTINE(DrawOpenPitfalls, "") { DrawOpenPitfalls(); }
+ROUTINE(InitHindD, "") { InitHindD(in.ix); }
+ROUTINE(ChkDrawHindD, "") { ChkDrawHindD(); }
+ROUTINE(HindDLogic, "") { HindDLogic(in.ix); }
+ROUTINE(InitMetalGear_, "") { InitMetalGear_(in.ix); }
+ROUTINE(ChkDrawMetalGear, "") { ChkDrawMetalGear(in.ix); }
+ROUTINE(InitGuardAlert, "") { InitGuardAlert(in.ix); }
+ROUTINE(GuardAlertLogic, "") { GuardAlertLogic(in.ix); }
+
+#include "../../src/game/Cameras.h"
+ROUTINE(InitCamera, "") { InitCamera(in.ix); }
+ROUTINE(InitCameraLaser, "") { InitCameraLaser(in.ix); }
+ROUTINE(CameraLogic, "") { CameraLogic(in.ix); }
+ROUTINE(LaserCameraLogic, "") { LaserCameraLogic(in.ix); }

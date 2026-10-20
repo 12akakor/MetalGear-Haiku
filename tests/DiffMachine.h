@@ -23,6 +23,7 @@ public:
 	Machine		machine;
 	uint64_t	time = 0;
 	long		checks = 0, failures = 0;
+	std::vector<uint8_t> refresh;	/* values of LD A,R in the last Call */
 
 	bool Load(const char* path)
 	{
@@ -72,9 +73,14 @@ public:
 		r.a = a;
 		r.iff1 = r.iff2 = false;
 		long guard = 0;
+		refresh.clear();
 		while (r.pc != kReturn && ++guard < 100000000) {
+			bool ldAR = machine.Read(r.pc) == 0xed
+				&& machine.Read((uint16_t)(r.pc + 1)) == 0x5f;
 			time += (uint64_t)machine.StepInstruction();
 			machine.GetVdp().SetTime(time);
+			if (ldAR)
+				refresh.push_back(r.a);
 		}
 		if (guard >= 100000000)
 			fprintf(stderr, "routine %04X did not return\n", address);
@@ -105,6 +111,9 @@ public:
 				continue;		/* stack used by the test */
 			if (a >= 0xef00 && a < 0xf0f0)
 				continue;		/* the game's stack (no variables there) */
+			if (a == 0xfc9e || a == 0xfc9f)
+				continue;		/* JIFFY: the BIOS counts interrupts that come
+						   in during a long tick of the reference */
 			if (ram[a - 0xc000] != gRam[a - 0xc000]) {
 				if (ramDiffs++ < 4) {
 					snprintf(buf, sizeof(buf), " RAM %04X ref %02X port %02X;", a,

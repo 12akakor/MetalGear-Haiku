@@ -11,6 +11,7 @@
 #include "../DiffMachine.h"
 #include "../../src/game/GameMain.h"
 #include "../../src/game/Input.h"
+#include "../../src/game/Random.h"
 #include "../../src/game/Rom.h"
 
 #include <stdlib.h>
@@ -59,7 +60,14 @@ main(int argc, char** argv)
 		}
 		uint8_t status = dm.machine.Ram()[0], sub = dm.machine.Ram()[1];
 		dm.Call(SYM(InterruptTick));
+		size_t used = 0;
+		gRefreshHook = [&]() -> uint8_t {
+			return used < dm.refresh.size() ? dm.refresh[used++] : (used++, 0);
+		};
 		InterruptTick();
+		gRefreshHook = nullptr;
+		if (used != dm.refresh.size() && gUnported == NULL)
+			printf("tick %ld: LD A,R original %zu, port %zu\n", t, dm.refresh.size(), used);
 		if (gUnported != NULL) {
 			printf("tick %ld: stopped, not rewritten yet: %s\n", t, gUnported);
 			break;

@@ -10,6 +10,8 @@
 #include "Actors.h"
 
 #include "Common.h"
+#include "Cameras.h"
+#include "Guards.h"
 #include "Items.h"
 #include "GameMain.h"
 #include "GfxBasic.h"
@@ -17,6 +19,7 @@
 #include "Random.h"
 #include "RoomGfx.h"
 #include "Rom.h"
+#include "RoomActors.h"
 #include "Sprites.h"
 #include "Structures.h"
 #include "Text.h"
@@ -538,7 +541,7 @@ void
 RestoreBackMine(uint16_t ix)
 {
 	uint8_t sx;
-	uint16_t de = GetMineBackXY(A(ix, ACTOR::X), A(ix, ACTOR::Y), &sx);
+	uint16_t de = GetMineBackXY(ix, A(ix, ACTOR::X), A(ix, ACTOR::Y), &sx);
 	VDP_Copy_Dot(sx, 0xa0, 0x40, static_cast<uint8_t>(de >> 8), static_cast<uint8_t>(de), 0x10,
 		0x10);
 }
