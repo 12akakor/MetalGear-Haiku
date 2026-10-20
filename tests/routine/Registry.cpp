@@ -340,3 +340,29 @@ ROUTINE(InitCamera, "") { InitCamera(in.ix); }
 ROUTINE(InitCameraLaser, "") { InitCameraLaser(in.ix); }
 ROUTINE(CameraLogic, "") { CameraLogic(in.ix); }
 ROUTINE(LaserCameraLogic, "") { LaserCameraLogic(in.ix); }
+
+#include "../../src/game/Shots.h"
+ROUTINE(InitGuardShot, "") { InitGuardShot(in.ix); }
+ROUTINE(InitShotToPlayer, "") { InitShotToPlayer(in.ix); }
+ROUTINE(InitBulletHor, "") { InitBulletHor(in.ix); }
+ROUTINE(InitBulletVert, "") { InitBulletVert(in.ix); }
+ROUTINE(InitSnoringSymbol, "") { InitSnoringSymbol(in.ix); }
+ROUTINE(SnoringSymbolLogic, "") { SnoringSymbolLogic(in.ix); }
+ROUTINE(BigExplosionLogic, "") { BigExplosionLogic(in.ix); }
+ROUTINE(InitTankShellBoss, "") { InitTankShellBoss(in.ix); }
+ROUTINE(InitTankShot, "") { InitTankShot(in.ix); }
+ROUTINE(TankShotLogic, "") { TankShotLogic(in.ix); }
+ROUTINE(InitTankShell, "") { InitTankShell(in.ix); }
+ROUTINE(ThankShellLogic, "") { ThankShellLogic(in.ix); }
+ROUTINE(InitSpawnTankShell, "") { InitSpawnTankShell(in.ix); }
+ROUTINE(SpawnTankShell, "") { SpawnTankShell(in.ix); }
+ROUTINE(InitGas, "") { InitGas(in.ix); }
+ROUTINE(GasLogic, "") { GasLogic(in.ix); }
+ROUTINE(InitLaserShot, "") { InitLaserShot(in.ix); }
+ROUTINE(LaserShotLogic, "") { LaserShotLogic(in.ix); }
+ROUTINE(InitFlame, "") { InitFlame(in.ix); }
+ROUTINE(FlamesLogic, "") { FlamesLogic(in.ix); }
+ROUTINE(FlameOutScreen, "") { FlameOutScreen(in.ix); }
+
+#include "../../src/game/IntroScene.h"
+ROUTINE(IntroSceneLogic, "") { IntroSceneLogic(); }

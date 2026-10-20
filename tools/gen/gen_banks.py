@@ -22,6 +22,9 @@ def walk(path, base):
 		m = re.match(r'\s*include\s+"?([^"\s]+)"?', line, re.I)
 		if m:
 			inc = os.path.join(root, m.group(1))
+			if not os.path.exists(inc):
+				# nested includes are relative to the including file
+				inc = os.path.join(os.path.dirname(path), m.group(1))
 			if os.path.exists(inc):
 				b = base
 				fm = re.match(r"Banks([0-9A-F])", m.group(1))

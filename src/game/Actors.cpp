@@ -15,6 +15,7 @@
 #include "GfxBasic.h"
 #include "Random.h"
 #include "Rom.h"
+#include "Shots.h"
 #include "RoomActors.h"
 #include "Sprites.h"
 #include "Structures.h"

@@ -10,7 +10,6 @@
 
 // Routines without arguments that are not rewritten yet (Unported.cpp).
 
-void		IntroSceneLogic();
 void		SetBulldozerKO();
 void		ChkPasswords();
 void		ChkCharTyped();

@@ -18,6 +18,7 @@
 #include "Items.h"
 #include "Rom.h"
 #include "Structures.h"
+#include "IntroScene.h"
 #include "Unported.h"
 
 
