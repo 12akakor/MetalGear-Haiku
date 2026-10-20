@@ -5,8 +5,8 @@
 
 
 // Rewritten from logic/actors/shooter.asm, jetpack.asm, guardswitch.asm,
-// powerswitch.asm, guardelevator.asm, desertsecurity.asm and
-// lorryshooter.asm.
+// powerswitch.asm, guardelevator.asm, desertsecurity.asm, lorryshooter.asm
+// and guardsupressor.asm.
 #include "Soldiers.h"
 
 #include "Actors.h"
@@ -1027,6 +1027,132 @@ LorryShooterLogic(uint16_t ix)
 		default:
 			if (gUnported == NULL)
 				gUnported = "LorryShooterLogic: bad status";
+			return;
+	}
+}
+
+
+// --- The four guards with the suppressor (guardsupressor.asm) -----------
+
+namespace {
+
+void
+SetGuardSprId_(uint16_t ix)
+{
+	uint8_t sprite = 9;	// down
+	if ((A(ix, GUARD_SILENCER::DirMovement) & 2) == 0)
+		sprite = (A(ix, GUARD_SILENCER::X) & 0x80) != 0 ? 10 : 11;
+	A(ix, GUARD_SILENCER::SpriteId) = sprite;
+}
+
+
+uint8_t
+GuardSilencerRandom(uint16_t ix, uint8_t mask)
+{
+	return static_cast<uint8_t>(((RefreshR() ^ A(ix, GUARD_SILENCER::ANIM_CNT)) & mask) + 1);
+}
+
+
+// Snake too close: the guard chases him (the original drops its caller).
+bool
+ChkChasePlayer(uint16_t ix)
+{
+	uint8_t distance;
+	if ((A(ix, GUARD_SILENCER::DirMovement) & 2) != 0)
+		distance = static_cast<uint8_t>(Ram(PlayerY) - A(ix, GUARD_SILENCER::Y));
+	else
+		distance = static_cast<uint8_t>(Ram(PlayerX) - A(ix, GUARD_SILENCER::X));
+	if (static_cast<uint8_t>(distance + 0x20) >= 0x41)
+		return false;
+	A(ix, GUARD_SILENCER::ChasingPlayer) = 1;
+	TransformAlertGuard2(ix, ID_GUARD_SILENCER);
+	return true;
+}
+
+}	// namespace
+
+
+void
+InitGuardSilencer(uint16_t ix)
+{
+	if (Ram(SupressorTaken) != 0) {
+		DismissActor0(ix);
+		return;
+	}
+	Ram(AreaMusic) = 0x3e;	// Mercenary
+	SetSoundEntryChk(0x3e);
+	A(ix, GUARD_SILENCER::Moving)++;
+	ResetActorSpeed(ix);
+	A(ix, GUARD_SILENCER::Wait) = static_cast<uint8_t>((RefreshR() & 0x0f) + 1);
+	uint8_t sprite = 9;
+	uint8_t axis = DIR_LEFT;	// the upper guards go left and right
+	if ((A(ix, GUARD_SILENCER::Y) & 0x80) != 0) {
+		axis = DIR_UP;	// the lower ones up and down
+		sprite = (A(ix, GUARD_SILENCER::X) & 0x80) != 0 ? 10 : 11;
+	}
+	A(ix, GUARD_SILENCER::DirMovement) = axis;
+	A(ix, GUARD_SILENCER::SpriteId) = sprite;
+}
+
+
+void
+GuardSilencerLogic(uint16_t ix)
+{
+	if ((A(ix, GUARD_SILENCER::ChasingPlayer) & 1) != 0) {
+		GuardAlertLogic(ix);
+		return;
+	}
+	if (ChkChasePlayer(ix))
+		return;
+	switch (A(ix, GUARD_SILENCER::Status)) {
+		case 0:	// waits, then walks one way
+		{
+			if (--A(ix, GUARD_SILENCER::Wait) != 0)
+				return;
+			A(ix, GUARD_SILENCER::Status) = 1;
+			A(ix, GUARD_SILENCER::Wait) = 0x0e;
+			uint8_t direction = static_cast<uint8_t>(((RefreshR() ^ A(ix, GUARD_SILENCER::ANIM_CNT))
+				& 1) + A(ix, GUARD_SILENCER::DirMovement));
+			A(ix, GUARD_SILENCER::Direction) = direction;
+			AnimateGuard2(ix, direction);
+			SetWalkSpeedFast(ix);
+			return;
+		}
+		case 1:	// then shoots
+			AnimateGuard2(ix, A(ix, ACTOR::Direction));
+			if (--A(ix, GUARD_SILENCER::Wait) != 0)
+				return;
+			A(ix, GUARD_SILENCER::Status) = 2;
+			ResetActorSpeed(ix);
+			A(ix, GUARD_SILENCER::Wait) = GuardSilencerRandom(ix, 7);
+			SetGuardSprId_(ix);
+			AddEnemyShot2(ix, (A(ix, GUARD_SILENCER::DirMovement) & 2) != 0
+				? ID_BULLET_VERT : ID_BULLET_HORIZ);
+			return;
+		case 2:	// turns back
+		{
+			if (--A(ix, GUARD_SILENCER::Wait) != 0)
+				return;
+			A(ix, GUARD_SILENCER::Status) = 3;
+			A(ix, GUARD_SILENCER::Wait) = 0x0e;
+			uint8_t direction = GetOppositeDir(A(ix, GUARD_SILENCER::Direction));
+			A(ix, GUARD_SILENCER::Direction) = direction;
+			AnimateGuard2(ix, direction);
+			SetWalkSpeedFast(ix);
+			return;
+		}
+		case 3:	// walks back
+			AnimateGuard2(ix, A(ix, ACTOR::Direction));
+			if (--A(ix, GUARD_SILENCER::Wait) != 0)
+				return;
+			A(ix, GUARD_SILENCER::Status) = 0;
+			ResetActorSpeed(ix);
+			A(ix, GUARD_SILENCER::Wait) = GuardSilencerRandom(ix, 0x0f);
+			SetGuardSprId_(ix);
+			return;
+		default:
+			if (gUnported == NULL)
+				gUnported = "GuardSilencerLogic: bad status";
 			return;
 	}
 }

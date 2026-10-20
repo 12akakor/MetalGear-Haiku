@@ -102,15 +102,8 @@ void		InitMetalGear(uint16_t ix);
 void		InitLaserRoom(uint16_t ix);
 
 // Not rewritten yet (Unported.cpp)
-void		InitEllenVoice(uint16_t ix);
 void		InitCaptureScene(uint16_t ix);
-void		InitPrisoner(uint16_t ix);
-void		InitGuardSilencer(uint16_t ix);
-void		ChkSayHelpMe(uint16_t ix);
 void		CaptureGuardsLogic(uint16_t ix);
-void		PrisonerLogic(uint16_t ix);
-void		FakeMadnadLogic(uint16_t ix);
-void		GuardSilencerLogic(uint16_t ix);
 
 
 #endif	// MG_ACTORS_H

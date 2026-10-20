@@ -16,21 +16,14 @@
 #define UNPORTED(name) \
 	void name(uint16_t) { if (gUnported == NULL) gUnported = #name; }
 
-UNPORTED(InitEllenVoice)
 UNPORTED(InitCaptureScene)
-UNPORTED(InitPrisoner)
-UNPORTED(InitGuardSilencer)
 
 #include "Unported.h"
 
 #define UNPORTED0(name) \
 	void name() { if (gUnported == NULL) gUnported = #name; }
 
-UNPORTED(ChkSayHelpMe)
 UNPORTED(CaptureGuardsLogic)
-UNPORTED(PrisonerLogic)
-UNPORTED(FakeMadnadLogic)
-UNPORTED(GuardSilencerLogic)
 UNPORTED0(ChkPasswords)
 UNPORTED0(ChkCharTyped)
 UNPORTED0(EndingSetup)

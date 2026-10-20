@@ -433,3 +433,12 @@ ROUTINE(InitCowardDuck, "") { InitCowardDuck(in.ix); }
 ROUTINE(CowardDuckLogic, "") { CowardDuckLogic(in.ix); }
 ROUTINE(InitBoomerang, "") { InitBoomerang(in.ix); }
 ROUTINE(BoomerangLogic, "") { BoomerangLogic(in.ix); }
+
+#include "../../src/game/Prisoners.h"
+ROUTINE(InitPrisoner, "") { InitPrisoner(in.ix); }
+ROUTINE(PrisonerLogic, "") { PrisonerLogic(in.ix); }
+ROUTINE(InitEllenVoice, "") { InitEllenVoice(in.ix); }
+ROUTINE(ChkSayHelpMe, "") { ChkSayHelpMe(in.ix); }
+ROUTINE(FakeMadnadLogic, "") { FakeMadnadLogic(in.ix); }
+ROUTINE(InitGuardSilencer, "") { InitGuardSilencer(in.ix); }
+ROUTINE(GuardSilencerLogic, "") { GuardSilencerLogic(in.ix); }

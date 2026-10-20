@@ -32,6 +32,8 @@ void		InitDesertSecurity(uint16_t ix);
 void		DesertSecurityLogic(uint16_t ix);
 void		InitLorryShooter(uint16_t ix);
 void		LorryShooterLogic(uint16_t ix);
+void		InitGuardSilencer(uint16_t ix);
+void		GuardSilencerLogic(uint16_t ix);
 
 
 #endif	// MG_SOLDIERS_H

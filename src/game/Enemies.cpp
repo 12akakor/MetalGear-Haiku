@@ -15,6 +15,7 @@
 #include "Dogs.h"
 #include "Guards.h"
 #include "Hazards.h"
+#include "Prisoners.h"
 #include "Items.h"
 #include "GameMain.h"
 #include "GfxBasic.h"
