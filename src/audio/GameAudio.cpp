@@ -38,6 +38,7 @@ void
 GameAudio::SetMode(Mode mode)
 {
 	fMode = mode;
+	fSynth.SetScc(mode == kScc);
 	fMusic.AllNotesOff();
 }
 

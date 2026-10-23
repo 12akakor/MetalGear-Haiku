@@ -11,6 +11,8 @@
 #include <string.h>
 
 #include "GameRam.h"
+#include "RomBlockCrc.h"
+#include "RomSymbols.h"
 
 
 uint8_t gRam[0x4000];
@@ -70,6 +72,22 @@ Sha1(const uint8_t* data, size_t size, char out[41])
 }
 
 
+void
+FollowRelocatedData()
+{
+	ResetRomSymbols();
+	// The dictionary of the Japanese texts: "ld de,idxDictionary" in
+	// AddDictEntry (the Remix 1.995 translations move it).
+	uint16_t address = RomSymbol(sym::AddDictEntry1);
+	if (sVersion == kRomJapanese && address != 0xffff && RomByte(0, address + 6) == 0x11) {
+		uint16_t dictionary = static_cast<uint16_t>(RomByte(0, address + 7)
+			| RomByte(0, address + 8) << 8);
+		if (dictionary != RomSymbol(sym::idxDictionary))
+			SetRomSymbol(sym::idxDictionary, dictionary);
+	}
+}
+
+
 const char*
 RomVersionName(RomVersion version)
 {
@@ -99,10 +117,35 @@ const uint32_t kBankCrc[2][16] = {
 	  0xbc720a97, 0x0f1f5180, 0xe641647c, 0x2b0977dd }
 };
 
-// Accept a modified ROM when at least this many banks equal a reference.
-const int kMinimumBanks = 12;
+// A modified ROM is accepted when at least this share (percent) of its
+// 256 byte blocks equals a reference. The two references share about 67
+// percent; translations and SCC versions share 89 percent or more.
+const int kMinimumSimilarity = 80;
 
 RomInfo sInfo;
+
+
+// Percentage of the (non uniform) 256 byte blocks equal to reference 'v'.
+int
+Similarity(const std::vector<uint8_t>& rom, int v)
+{
+	int equal = 0, counted = 0;
+	for (int block = 0; block < 512; block++) {
+		if (kBlockCrc[v][block] == 0)
+			continue;
+		counted++;
+		if (Crc32(rom.data() + block * 256, 256) == kBlockCrc[v][block])
+			equal++;
+	}
+	return counted == 0 ? 0 : equal * 100 / counted;
+}
+
+
+bool
+Contains(const uint8_t* data, size_t size, const uint8_t* pattern, size_t length)
+{
+	return std::search(data, data + size, pattern, pattern + length) != data + size;
+}
 
 }	// namespace
 
@@ -135,47 +178,71 @@ IdentifyRom(const std::vector<uint8_t>& image)
 		info.crc32 = Crc32(rom.data(), rom.size());
 		Sha1(rom.data(), rom.size(), info.sha1);
 	}
-	if (rom.size() != 0x20000) {
-		info.note = "the ROM must be 128 KB (131072 bytes)";
+	if (rom.size() < 0x20000) {
+		info.note = "the ROM must be at least 128 KB (131072 bytes)";
 		return info;
 	}
-	int best = -1, bestCount = -1;
-	uint32_t bestMask = 0;
-	for (int v = 0; v < 2; v++) {
-		int count = 0;
-		uint32_t mask = 0;
-		for (int b = 0; b < 16; b++) {
-			if (Crc32(rom.data() + b * 0x2000, 0x2000) == kBankCrc[v][b])
-				count++;
-			else
-				mask |= 1u << b;
-		}
-		if (count > bestCount) {
-			bestCount = count;
-			best = v;
-			bestMask = mask;
+
+	// Candidates for the 128 KB of the game: the first 128 KB, and for the
+	// SCC versions (136 KB, Konami SCC cartridge) bank 16 as bank 0: their
+	// new bank 0 only starts the game and holds the SCC sound code.
+	std::vector<uint8_t> candidates[2];
+	candidates[0].assign(rom.begin(), rom.begin() + 0x20000);
+	if (rom.size() >= 0x22000) {
+		candidates[1].assign(rom.begin() + 0x20000, rom.begin() + 0x22000);
+		candidates[1].insert(candidates[1].end(), rom.begin() + 0x2000, rom.begin() + 0x20000);
+	}
+	int best = -1, bestCandidate = 0, bestSimilarity = -1;
+	for (int c = 0; c < 2; c++) {
+		if (candidates[c].empty())
+			continue;
+		for (int v = 0; v < 2; v++) {
+			int similarity = Similarity(candidates[c], v);
+			if (similarity > bestSimilarity) {
+				bestSimilarity = similarity;
+				best = v;
+				bestCandidate = c;
+			}
 		}
 	}
-	info.matchingBanks = bestCount;
-	info.differingBanks = bestMask;
-	if (bestCount < kMinimumBanks) {
+	const std::vector<uint8_t>& game = candidates[bestCandidate];
+	info.similarity = bestSimilarity;
+	for (int b = 0; b < 16; b++) {
+		if (Crc32(game.data() + b * 0x2000, 0x2000) == kBankCrc[best][b])
+			info.matchingBanks++;
+		else
+			info.differingBanks |= 1u << b;
+	}
+	if (bestSimilarity < kMinimumSimilarity) {
 		info.note = "not a known version of Metal Gear (MSX2)";
 		return info;
 	}
 	info.version = best == 0 ? kRomEnglish : kRomJapanese;
-	info.exact = bestCount == 16;
+	info.game = game;
+	info.exact = info.matchingBanks == 16 && rom.size() == 0x20000;
+
+	// SCC: "ld a,3Fh / ld (9000h),a" switches the SCC on.
+	static const uint8_t kSccOn[] = { 0x3e, 0x3f, 0x32, 0x00, 0x90 };
+	info.scc = bestCandidate == 1 && Contains(rom.data(), 0x2000, kSccOn, sizeof(kSccOn));
+
 	if (!info.exact) {
 		char buf[200];
-		snprintf(buf, sizeof(buf), "modified %s ROM (%d of 16 banks equal, others differ:",
-			RomVersionName(info.version), bestCount);
+		snprintf(buf, sizeof(buf), "modified %s ROM (%d%% equal, %d of 16 banks; differ:",
+			RomVersionName(info.version), bestSimilarity, info.matchingBanks);
 		std::string note = buf;
 		for (int b = 0; b < 16; b++) {
-			if ((bestMask & (1u << b)) != 0u) {
+			if ((info.differingBanks & (1u << b)) != 0u) {
 				snprintf(buf, sizeof(buf), " %d", b);
 				note += buf;
 			}
 		}
-		note += "); it may work, texts or graphics can differ";
+		note += "); texts and graphics come from this ROM";
+		if (info.scc)
+			note += "; SCC version: the SCC sound is on";
+		else if (rom.size() > 0x20000)
+			note += "; the extra banks (added code) are not used";
+		if (!info.note.empty())
+			note = info.note + "; " + note;
 		info.note = note;
 	}
 	return info;
@@ -203,11 +270,11 @@ SetGameRom(const std::vector<uint8_t>& image, std::string* error)
 		}
 		return false;
 	}
-	// For overdumps and padding the first 128 KB are the game.
-	std::vector<uint8_t> rom(image.begin(), image.begin() + 0x20000);
-	sRom = rom;
+	sRom = info.game;
+	info.game.clear();
 	sVersion = info.version;
 	sInfo = info;
+	FollowRelocatedData();
 	return true;
 }
 

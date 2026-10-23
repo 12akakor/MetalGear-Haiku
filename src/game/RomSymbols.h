@@ -4385,6 +4385,9 @@ enum Id {
 /* Address of a symbol in the loaded ROM version; 0xffff if that version
    does not have it. */
 uint16_t RomSymbol(sym::Id id);
+/* For data a modified ROM moved (FollowRelocatedData). */
+void SetRomSymbol(sym::Id id, uint16_t address);
+void ResetRomSymbols();
 
 
 #endif	// MG_ROM_SYMBOLS_H

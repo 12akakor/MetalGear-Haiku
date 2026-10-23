@@ -9,6 +9,7 @@
 // Sound of the game: the driver plus the renderers.
 //
 // kClassic   original sound (tone generator for everything)
+// kScc       original sound plus the SCC layer of the SCC versions
 // kEnhanced  music on SoundFont instruments with reverb; the sound
 // effects keep their original character on the tone
 // generator, and the third music voice keeps playing while
@@ -24,7 +25,7 @@
 
 class GameAudio : public SoundListener {
 public:
-	enum Mode { kClassic, kEnhanced };
+	enum Mode { kClassic, kEnhanced, kScc };
 
 	// Original tick rate: 3579545 / (228 * 262) Hz.
 	static constexpr double kTickRate = 3579545.0 / (228.0 * 262.0);

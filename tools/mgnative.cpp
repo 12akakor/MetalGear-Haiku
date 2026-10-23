@@ -2,7 +2,7 @@
  * Runs the native game without a window: frames as PPM, sound as WAV.
  *
  *   mgnative <rom> <ticks> [-shot n,n,...] [-every n] [-keys file] [-out dir]
- *            [-wav file] [-sf2 soundfont]
+ *            [-wav file] [-sf2 soundfont] [-scc]
  */
 #include "../src/audio/GameAudio.h"
 #include "../src/game/GameData.h"
@@ -48,6 +48,7 @@ main(int argc, char** argv)
 	std::set<long> shots;
 	long every = 0;
 	std::string outDir = "out", wav, sf2;
+	bool scc = false;
 	const char* keys = NULL;
 	for (int i = 3; i < argc; i++) {
 		if (!strcmp(argv[i], "-shot") && i + 1 < argc) {
@@ -67,6 +68,8 @@ main(int argc, char** argv)
 			wav = argv[++i];
 		else if (!strcmp(argv[i], "-sf2") && i + 1 < argc)
 			sf2 = argv[++i];
+		else if (!strcmp(argv[i], "-scc"))
+			scc = true;
 	}
 	struct Key { long tick; int row, bit, down; };
 	std::vector<Key> script;
@@ -85,6 +88,8 @@ main(int argc, char** argv)
 		audio.SetMode(GameAudio::kEnhanced);
 	else
 		audio.SetMode(GameAudio::kClassic);
+	if (scc)
+		audio.SetMode(GameAudio::kScc);
 	std::vector<int16_t> sound;
 	std::vector<uint32_t> frame(kScreenWidth * kScreenHeight);
 

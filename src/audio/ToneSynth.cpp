@@ -13,6 +13,7 @@
 namespace {
 
 const double kClock = 1789772.5;
+const double kSccClock = 3579545.0;
 
 // 3 dB per step, 0 is silent.
 struct AmplitudeTable {
@@ -50,6 +51,9 @@ PolyBlep(double t, double dt)
 
 
 ToneSynth::ToneSynth()
+	:
+	fScc(false),
+	fSccGain(0.4f)
 {
 	Reset();
 }
@@ -78,6 +82,10 @@ ToneSynth::Reset()
 	fEnvAttack = false;
 	fEnvAlternate = fEnvHoldMode = fEnvContinue = false;
 	fDcLeft = fDcRight = fDcInLeft = fDcInRight = 0;
+	for (int i = 0; i < 3; i++) {
+		fSccPhase[i] = 0;
+		fSccLevel[i] = 0;
+	}
 }
 
 
@@ -132,6 +140,16 @@ ToneSynth::Render(float* out, int count, int rate, float gain)
 		target[c] = ((fMask & (1 << c)) != 0) ? VolumeAmplitude(fReg[8 + c] & 0x0f) : 0.0f;
 	}
 	const float smooth = 1.0f - expf(-1.0f / (0.002f * rate));	// 2 ms
+
+	// SCC layer: period, linear volume (low 4 bits) and tone on, per voice.
+	double sccDt[3];
+	float sccTarget[3];
+	for (int c = 0; c < 3; c++) {
+		int period = fReg[c * 2] | ((fReg[c * 2 + 1] & 0x0f) << 8);
+		sccDt[c] = kSccClock / (32.0 * (period + 1)) / rate;
+		bool on = fScc && (fMask & (1 << c)) != 0 && (fReg[7] & (1 << c)) == 0;
+		sccTarget[c] = on ? (fReg[8 + c] & 0x0f) / 15.0f : 0.0f;
+	}
 
 	for (int i = 0; i < count; i++) {
 		// noise: 17 bit LFSR
@@ -189,6 +207,27 @@ ToneSynth::Render(float* out, int count, int rate, float gain)
 			}
 			double value = square * (noiseOn ? fNoise : 1);
 			float v = static_cast<float>(value) * fLevel[c];
+			left += v * (1.0f - fPan[c]);
+			right += v * fPan[c];
+		}
+		for (int c = 0; c < 3; c++) {
+			// The SCC wave of the patch: a falling sawtooth (00 F8 .. 80
+			// 78 .. 08), band limited.
+			fSccLevel[c] += (sccTarget[c] - fSccLevel[c]) * smooth;
+			if (fSccLevel[c] < 1e-5f && sccTarget[c] == 0)
+				continue;
+			double dt = sccDt[c];
+			fSccPhase[c] += dt;
+			if (fSccPhase[c] >= 1.0)
+				fSccPhase[c] -= floor(fSccPhase[c]);
+			if (dt >= 0.5)
+				continue;
+			// jump from -1 to +0.94 at 17/32 of the period
+			double t = fSccPhase[c] + 15.0 / 32.0;
+			if (t >= 1.0)
+				t -= 1.0;
+			double saw = 1.0 - 2.0 * t + PolyBlep(t, dt);
+			float v = static_cast<float>(saw) * fSccLevel[c] * fSccGain;
 			left += v * (1.0f - fPan[c]);
 			right += v * fPan[c];
 		}

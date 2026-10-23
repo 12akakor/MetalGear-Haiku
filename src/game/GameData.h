@@ -31,7 +31,10 @@ struct RomInfo {
 	size_t		originalSize = 0;
 	int			matchingBanks = 0;	// of 16, with the chosen version
 	uint32_t	differingBanks = 0;	// bit mask
+	int			similarity = 0;	// percent of 256 byte blocks equal
+	bool		scc = false;	// SCC version (sound also on the SCC)
 	std::string	note;	// remark for the player
+	std::vector<uint8_t> game;	// the 128 KB of the game (IdentifyRom)
 };
 
 // Identifies a ROM image (any size); does not load it.
@@ -45,6 +48,10 @@ RomVersion	LoadedRomVersion();
 const char*	RomVersionName(RomVersion version);
 uint32_t	Crc32(const uint8_t* data, size_t size);
 void		Sha1(const uint8_t* data, size_t size, char out[41]);
+
+// Data that a modified ROM moved: its address is read from the code that
+// uses it (SetGameRom does this).
+void		FollowRelocatedData();
 
 // Byte at 'address' (#4000-#BFFF) when 'bank' is mapped at that address.
 uint8_t		RomByte(int bank, uint16_t address);

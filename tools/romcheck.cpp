@@ -36,7 +36,8 @@ main(int argc, char** argv)
 		if (!info.note.empty())
 			printf("  note: %s\n", info.note.c_str());
 		if (info.version != kRomUnknown) {
-			printf("  banks equal to the reference: %d of 16\n", info.matchingBanks);
+			printf("  equal to the reference: %d%% of the blocks, %d of 16 banks%s\n",
+				info.similarity, info.matchingBanks, info.scc ? "; SCC version" : "");
 		} else
 			bad++;
 	}

@@ -12,9 +12,29 @@ a dump of a cartridge you own.
 Supported: the English version (CRC32 `E85C5731`, SHA1 `b656bd19...`) and the
 Japanese version (CRC32 `FAFE1303`, SHA1 `a52021f1...`), the same dumps as in
 the openMSX software database. Overdumps (128 KB repeated) are accepted, and
-lightly modified versions (translations, small hacks) are accepted with a
-warning when at least 12 of the 16 banks equal one of the two. Check a ROM
-with `mg-romcheck`: it prints only checksums, so its output can be shared.
+modified versions are accepted with a note when at least 80 percent of their
+256 byte blocks equal one of the two (unrelated ROMs score near 0, the two
+versions 67 percent with each other). Texts, fonts and graphics then come
+from that ROM; code changes of a hack are not followed. Tested with the
+differential test, 0 differences each:
+
+| ROM | Base | Remark |
+|---|---|---|
+| Official English Translation (= English) | English | |
+| French translation by Django, French 6393, French 6874 | Japanese | |
+| Russian translation by Andrew Shtein | Japanese | |
+| Remix 1.995 | Japanese | its moved dictionary is found in the code |
+| Remix 1.995 SCC Version, TFH SCC version (136 KB) | Japanese / English | SCC sound on, see below |
+| 1.995 Remix + Nekura Hoka + Improvements v1.0 (160 KB) | Japanese | the speed improvements in the extra banks are not needed and not used |
+
+The SCC versions (patch by Fony, 2018) need a Konami SCC cartridge: bank 0
+is a new start bank with the SCC code and the original bank 0 is moved to
+the end; every write to the PSG also goes to the SCC, which plays the same
+notes as a sawtooth. The port recognises them, uses the original bank 0 and
+plays that SCC layer itself (F10 switches it on for any ROM).
+
+Check a ROM with `mg-romcheck`: it prints only checksums, so its output can
+be shared.
 
     g++ -O2 -std=c++17 -o mg-romcheck tools/romcheck.cpp src/game/GameData.cpp src/game/RomSymbols.cpp
     ./mg-romcheck MetalGear.rom
@@ -32,7 +52,8 @@ bit for bit.
 
 - **Music:** the original sound driver, rewritten in C++ (bit exact). The notes
   can be played on General MIDI SoundFont instruments with reverb
-  ("enhanced"), or with the original square wave sound ("classic").
+  ("enhanced"), or with the original square wave sound ("classic"), with or
+  without the SCC layer of the SCC versions.
 - **Graphics:** HD tiles are generated from the ROM on your own computer
   (crisp surfaces, smooth object contours, realistic colours for known objects,
   original brightness kept). Your own drawings in `hd/tiles` take priority.
@@ -78,7 +99,7 @@ Metal Gear uses F1-F5 itself):
 | F7 | Next filter (xBR, nearest, sharp) |
 | F8 | Show or hide the timing display |
 | F9 or Print Screen | Screenshot (PNG in the home folder) |
-| F10 | Music: enhanced or original sound |
+| F10 | Music: enhanced, original sound, original sound with SCC |
 | F11 | Full screen on or off |
 | F12 or Alt+Q | Quit |
 

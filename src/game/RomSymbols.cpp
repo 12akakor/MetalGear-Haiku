@@ -1109,9 +1109,29 @@ static const uint16_t kJapanese[sym::Count] = {
 	0xb805, 0xffff, 0xbd77, 0xffff,
 };
 
+static uint16_t sRelocated[sym::Count];	// 0: not moved
+
+
 uint16_t
 RomSymbol(sym::Id id)
 {
+	if (sRelocated[id] != 0)
+		return sRelocated[id];
 	const uint16_t* table = LoadedRomVersion() == kRomJapanese ? kJapanese : kEnglish;
 	return table[id];
+}
+
+
+void
+SetRomSymbol(sym::Id id, uint16_t address)
+{
+	sRelocated[id] = address;
+}
+
+
+void
+ResetRomSymbols()
+{
+	for (int i = 0; i < sym::Count; i++)
+		sRelocated[i] = 0;
 }

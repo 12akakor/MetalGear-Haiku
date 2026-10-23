@@ -51,6 +51,9 @@ enum Id {
 /* Address of a symbol in the loaded ROM version; 0xffff if that version
    does not have it. */
 uint16_t RomSymbol(sym::Id id);
+/* For data a modified ROM moved (FollowRelocatedData). */
+void SetRomSymbol(sym::Id id, uint16_t address);
+void ResetRomSymbols();
 
 
 #endif	// MG_ROM_SYMBOLS_H
@@ -63,11 +66,31 @@ with open(out + '/RomSymbols.cpp', 'w') as c:
         for i in range(0, len(names), 8):
             c.write('\t' + ', '.join('0x%04x' % d.get(n, 0xffff) for n in names[i:i+8]) + ',\n')
         c.write('};\n\n')
-    c.write('''uint16_t
+    c.write('''static uint16_t sRelocated[sym::Count];	// 0: not moved
+
+
+uint16_t
 RomSymbol(sym::Id id)
 {
+	if (sRelocated[id] != 0)
+		return sRelocated[id];
 	const uint16_t* table = LoadedRomVersion() == kRomJapanese ? kJapanese : kEnglish;
 	return table[id];
+}
+
+
+void
+SetRomSymbol(sym::Id id, uint16_t address)
+{
+	sRelocated[id] = address;
+}
+
+
+void
+ResetRomSymbols()
+{
+	for (int i = 0; i < sym::Count; i++)
+		sRelocated[i] = 0;
 }
 ''')
 print('%d symbols (%d English, %d Japanese)' % (len(names), len(en), len(jp)))

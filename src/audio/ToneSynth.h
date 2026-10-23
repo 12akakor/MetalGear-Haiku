@@ -11,6 +11,14 @@
 // the register values the sound driver produces (AY-3-8910 layout).
 // Band limited (PolyBLEP) square waves, so the high notes do not alias at
 // modern output rates. Stereo: each voice has its own pan position.
+//
+// SCC layer (optional): what the SCC versions of the game do (the patch by
+// Fony, 2018): every write to the PSG also goes to the SCC sound chip of
+// a Konami SCC cartridge. Tone period (registers 0-5), volume (8-10, the
+// envelope bit is ignored there) and tone on or off (7) of each voice
+// drive an SCC voice playing a sawtooth: the same notes, with a fuller
+// sound. The SCC runs at 3.58 MHz: f = clock / (32 * (period + 1)), so
+// its notes are the PSG notes, high notes a little lower.
 
 #include <stdint.h>
 
@@ -26,6 +34,8 @@ public:
 	// Voices that are heard (bit 0 = A, 1 = B, 2 = C).
 	inline	void		SetVoiceMask(int mask);
 	inline	void		SetPan(int voice, float pan);
+	inline	void		SetScc(bool on, float gain = 0.4f);
+	inline	bool		Scc() const;
 
 	// Adds 'count' stereo frames to 'out' (interleaved), scaled by gain.
 			void		Render(float* out, int count, int rate, float gain);
@@ -51,6 +61,11 @@ private:
 			bool		fEnvContinue;
 			float		fLevel[3];	// smoothed volume (no clicks)
 			float		fDcLeft, fDcRight, fDcInLeft, fDcInRight;
+
+			bool		fScc;
+			float		fSccGain;
+			double		fSccPhase[3];
+			float		fSccLevel[3];
 };
 
 inline uint8_t
@@ -71,6 +86,21 @@ inline void
 ToneSynth::SetPan(int voice, float pan)
 {
 	fPan[voice] = pan;
+}
+
+
+inline void
+ToneSynth::SetScc(bool on, float gain)
+{
+	fScc = on;
+	fSccGain = gain;
+}
+
+
+inline bool
+ToneSynth::Scc() const
+{
+	return fScc;
 }
 
 

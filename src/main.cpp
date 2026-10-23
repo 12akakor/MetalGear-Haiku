@@ -11,7 +11,7 @@
 // Keys: arrows move, space fire, M or N second button (weapon), F1-F5 as
 // on the MSX (pause, weapons, equipment, ...), Return. Port functions (as
 // close to the Maze of Galious port as the game allows, it uses F1-F5
-// itself): F7 next filter, F8 timing display, F9 or Print Screen screenshot, F10 music
+// itself): F7 next filter, F8 timing display, F9 or Print Screen screenshot, F10 music (enhanced, original, original with SCC)
 // classic/enhanced, F11 full screen, F12 or Alt+Q quit.
 #include <dirent.h>
 #include <stdio.h>
@@ -284,6 +284,9 @@ GameMain(int argc, char** argv)
 		audio.SetMode(GameAudio::kClassic);
 		printf("  music: classic (no SoundFont found)\n");
 	}
+	// The SCC versions: their own sound first (F10 switches).
+	if (info.scc)
+		audio.SetMode(GameAudio::kScc);
 	bool audioOpen = PlatAudioOpen(44100, AudioCallback, NULL);
 
 	// The cassette for saving and loading: a .CAS image, also usable in
@@ -327,8 +330,17 @@ GameMain(int argc, char** argv)
 						PlatSaveScreenshot();
 						break;
 					case MOGK_F10:
-						audio.SetMode(audio.GetMode() == GameAudio::kEnhanced
-							? GameAudio::kClassic : GameAudio::kEnhanced);
+					{
+						// enhanced (with a SoundFont), original, original + SCC
+						GameAudio::Mode mode = audio.GetMode();
+						if (mode == GameAudio::kEnhanced)
+							mode = GameAudio::kClassic;
+						else if (mode == GameAudio::kClassic)
+							mode = GameAudio::kScc;
+						else
+							mode = audio.Music().Ready() ? GameAudio::kEnhanced : GameAudio::kClassic;
+						audio.SetMode(mode);
+					}
 						break;
 					case MOGK_F11:
 						PlatSetFullscreen(!PlatIsFullscreen());
