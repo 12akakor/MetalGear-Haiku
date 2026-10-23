@@ -12,7 +12,7 @@ out/
 *.mp3
 *.zip
 export/
-hd/
+/hd/
 MetalGear
 mgnative
 mg-romcheck
