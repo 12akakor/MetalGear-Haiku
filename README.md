@@ -73,6 +73,8 @@ bit for bit.
 
 ## Building and running on Haiku
 
+Tested on Haiku R1/beta6 x86_64 (hrev59866+92), in VirtualBox.
+
     make
     mkdir -p ~/config/settings/MetalGear
     cp MetalGear.rom ~/config/settings/MetalGear/
