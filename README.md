@@ -80,17 +80,22 @@ Tested on Haiku R1/beta6 x86_64 (hrev59866+92), in VirtualBox.
     cp MetalGear.rom ~/config/settings/MetalGear/
     ./MetalGear
 
-The enhanced music uses `data/MetalGear-FluidR3.sf2` (20 MB, included): the
-instruments and drums of the Fluid R3 General MIDI SoundFont (MIT licence)
-that the game uses. The instruments per music are in `music.cfg` in the
-settings folder (written on first run). To choose other instruments there,
-put the complete FluidR3_GM.sf2 (or any General MIDI SoundFont) in the
-settings folder; it is then used instead. Without any SoundFont the
-original sound plays.
+The enhanced music uses `data/MetalGear-GeneralUser.sf2` (7 MB, included):
+the instruments and drums of GeneralUser GS 2.0.3 by S. Christian Collins
+that the game uses (licence in `data/LICENSE.GeneralUser.txt`: free to use,
+also in software). The instruments and levels per music are in `music.cfg`
+in the settings folder (written on first run, for this SoundFont; a
+`music.cfg` made for another one is kept as `music.cfg.old` and replaced).
+To choose other instruments, put the complete GeneralUser GS (or any General
+MIDI SoundFont) in the settings folder; it is then used instead. Without any
+SoundFont the original sound plays.
 
-Make a subset of another SoundFont with:
+Make a subset of another SoundFont with the instruments and drums the game
+uses:
 
-    tools/sf2/sf2_subset.py FluidR3_GM.sf2 out.sf2 0:61,0:33,128:0 -drumkeys 36,38
+    tools/sf2/sf2_subset.py GeneralUser-GS.sf2 out.sf2 \
+        0:29,0:30,0:33,0:36,0:38,0:48,0:50,0:56,0:61,0:62,0:80,0:81,128:0 \
+        -drumkeys 36,38,40,41,42,45,48,49,50
 
 Keys: arrows, space (fire), M or N (second button), F1-F5 and Return as on
 the MSX. Port keys (as in the Maze of Galious port where the game allows;
@@ -136,9 +141,9 @@ format is unknown here); a sample file would be needed.
 
 ## Tools
 
-    # music previews (needs a General MIDI SoundFont, e.g. FluidR3_GM.sf2)
-    g++ -O2 -std=c++17 -o music_preview tools/music_preview.cpp src/audio/*.cpp src/game/*.cpp
-    ./music_preview MetalGear.rom FluidR3_GM.sf2 out 60
+    # music previews, original and enhanced (any General MIDI SoundFont)
+    make music_preview
+    ./music_preview MetalGear.rom data/MetalGear-GeneralUser.sf2 out 60
 
     # graphics export, HD tool
     g++ -O2 -std=c++17 -o gfx_export tools/gfx_export.cpp src/game/*.cpp src/msx/*.cpp src/z80/*.cpp

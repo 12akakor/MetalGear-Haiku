@@ -21,9 +21,11 @@ MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp src/MetalGear.rdef
 	xres -o $@ MetalGear.rsrc
 	mimeset -f $@
 
-tools: mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff routine_diff
+tools: music_preview mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff routine_diff
 
 mgnative: tools/mgnative.cpp $(GAME) $(AUDIO)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+music_preview: tools/music_preview.cpp $(GAME) $(AUDIO)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 mg-romcheck: tools/romcheck.cpp src/game/GameData.cpp src/game/RomSymbols.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^

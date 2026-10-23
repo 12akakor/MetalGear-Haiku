@@ -162,7 +162,7 @@ LoadRom(int argc, char** argv, std::string* message)
 
 
 // A SoundFont of the player's own in the settings folder comes first,
-// then the one that comes with the game (data/MetalGear-FluidR3.sf2),
+// then the one that comes with the game (data/MetalGear-GeneralUser.sf2),
 // then the system's.
 std::string
 FindSoundfont()
@@ -276,8 +276,11 @@ GameMain(int argc, char** argv)
 	std::string soundfont = FindSoundfont();
 	if (!soundfont.empty() && audio.LoadSoundFont(soundfont.c_str())) {
 		std::string config = std::string(PlatSettingsDir()) + "/music.cfg";
-		if (!audio.Music().LoadConfig(config.c_str()))
+		if (!audio.Music().LoadConfig(config.c_str())) {
+			// none yet, or set for another SoundFont: keep that one aside
+			rename(config.c_str(), (config + ".old").c_str());
 			audio.Music().SaveConfig(config.c_str());
+		}
 		audio.SetMode(GameAudio::kEnhanced);
 		printf("  music: %s\n", soundfont.c_str());
 	} else {

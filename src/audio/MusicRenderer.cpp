@@ -56,7 +56,9 @@ Amplitude(int v)
 	return v <= 0 ? 0.0f : static_cast<float>(pow(2.0, (v - 15) / 2.0));
 }
 
-// Default instruments (GM program numbers, 0 based).
+// Default instruments (GM program numbers, 0 based) and levels, set for
+// GeneralUser GS 2.0.3 (kTuning): the balance of the voices is the one
+// first chosen by ear with FluidR3, measured per instrument.
 struct Default {
 	int program, lowProgram, split;
 	float volume, pan;
@@ -64,30 +66,30 @@ struct Default {
 
 const Default kDefaults[MusicRenderer::kMusicCount][MusicRenderer::kAreas] = {
 	// #29 Intro: Theme of Tara
-	{ {61, 33, 48, 0.9f, 0.5f}, {48, 33, 48, 0.75f, 0.3f}, {62, -1, 0, 0.7f, 0.7f} },
+	{ {61, 33, 48, 1.05f, 0.5f}, {48, 33, 48, 0.67f, 0.3f}, {62, -1, 0, 0.75f, 0.7f} },
 	// #2C Theme of Tara
-	{ {61, 33, 48, 0.9f, 0.5f}, {48, 33, 48, 0.75f, 0.3f}, {62, -1, 0, 0.7f, 0.7f} },
+	{ {61, 33, 48, 1.05f, 0.5f}, {48, 33, 48, 0.67f, 0.3f}, {62, -1, 0, 0.75f, 0.7f} },
 	// #2F Red Alert
-	{ {30, 38, 48, 0.75f, 0.45f}, {38, -1, 0, 0.9f, 0.5f}, {81, -1, 0, 0.6f, 0.65f} },
+	{ {30, 38, 48, 0.80f, 0.45f}, {38, -1, 0, 0.85f, 0.5f}, {81, -1, 0, 0.70f, 0.65f} },
 	// #32 Alert
-	{ {30, 38, 48, 0.75f, 0.45f}, {38, -1, 0, 0.9f, 0.5f}, {81, -1, 0, 0.6f, 0.65f} },
+	{ {30, 38, 48, 0.80f, 0.45f}, {38, -1, 0, 0.85f, 0.5f}, {81, -1, 0, 0.70f, 0.65f} },
 	// #35 Sneaking Mission
-	{ {81, -1, 0, 0.6f, 0.45f}, {38, -1, 0, 0.9f, 0.5f}, {50, 38, 48, 0.75f, 0.6f} },
+	{ {81, -1, 0, 0.70f, 0.45f}, {38, -1, 0, 0.85f, 0.5f}, {50, 38, 48, 1.29f, 0.6f} },
 	// #38 TX-55 Metal Gear
-	{ {80, -1, 0, 0.5f, 0.4f}, {38, -1, 0, 0.9f, 0.5f}, {50, -1, 0, 0.7f, 0.6f} },
+	{ {80, -1, 0, 0.71f, 0.4f}, {38, -1, 0, 0.85f, 0.5f}, {50, -1, 0, 2.18f, 0.6f} },
 	// #3B Beyond Big Boss
-	{ {38, -1, 0, 0.9f, 0.5f}, {30, -1, 0, 0.65f, 0.35f}, {81, 38, 48, 0.6f, 0.65f} },
+	{ {38, -1, 0, 0.85f, 0.5f}, {30, -1, 0, 0.78f, 0.35f}, {81, 38, 48, 0.63f, 0.65f} },
 	// #3E Mercenary
-	{ {30, 38, 45, 0.7f, 0.4f}, {29, 38, 45, 0.7f, 0.6f}, {48, -1, 0, 0.7f, 0.5f} },
+	{ {30, 38, 45, 0.74f, 0.4f}, {29, 38, 45, 0.70f, 0.6f}, {48, -1, 0, 0.54f, 0.5f} },
 	// #41 Return of Fox Hunter
-	{ {56, 33, 48, 0.85f, 0.5f}, {33, -1, 0, 0.9f, 0.45f}, {48, 33, 48, 0.75f, 0.6f} },
+	{ {56, 33, 48, 0.91f, 0.5f}, {33, -1, 0, 0.93f, 0.45f}, {48, 33, 48, 0.67f, 0.6f} },
 	// #44 Just Another Dead Soldier
-	{ {48, 33, 48, 0.8f, 0.4f}, {48, 33, 48, 0.75f, 0.6f}, {33, 33, 48, 0.85f, 0.5f} }
+	{ {48, 33, 48, 0.72f, 0.4f}, {48, 33, 48, 0.67f, 0.6f}, {33, 33, 48, 0.88f, 0.5f} }
 };
 
 // Loudness per music, so all sit at about the same level.
 const float kSongGain[MusicRenderer::kMusicCount] = {
-	1.15f, 1.05f, 1.1f, 1.1f, 1.8f, 0.8f, 1.1f, 0.9f, 2.6f, 2.3f
+	0.86f, 0.82f, 1.26f, 1.24f, 1.81f, 0.74f, 1.15f, 1.01f, 1.36f, 1.81f
 };
 
 // Drum kit pieces (instruments.asm) to GM drum keys.
@@ -111,8 +113,8 @@ MusicRenderer::MusicRenderer()
 	:
 	fSlapBassProgram(36),
 	fBassProgram(33),
-	fDrumVolume(0.9f),
-	fBassVolume(0.95f),
+	fDrumVolume(0.72f),
+	fBassVolume(1.05f),
 	fReverbWet(0.22f),
 	fFont(NULL),
 	fRate(44100)
@@ -384,6 +386,12 @@ MusicRenderer::Render(float* out, int count, float gain)
 }
 
 
+// The SoundFont the default instruments and levels are set for. A
+// music.cfg written for another one is not used (the caller keeps it as
+// music.cfg.old and writes a new one).
+const char* const MusicRenderer::kTuning = "GeneralUser-GS-2.0.3";
+
+
 bool
 MusicRenderer::LoadConfig(const char* path)
 {
@@ -391,6 +399,17 @@ MusicRenderer::LoadConfig(const char* path)
 	if (fp == NULL)
 		return false;
 	char line[256];
+	bool tuned = false;
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		char name[64];
+		if (sscanf(line, "tuning %63s", name) == 1 && strcmp(name, kTuning) == 0)
+			tuned = true;
+	}
+	if (!tuned) {
+		fclose(fp);
+		return false;
+	}
+	rewind(fp);
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		if (line[0] == '#' || line[0] == '\n')
 			continue;
@@ -410,6 +429,10 @@ MusicRenderer::LoadConfig(const char* path)
 		} else if (sscanf(line, "drum %d %d", &area, &value) == 2) {
 			if (area >= 0 && area < 12)
 				fDrumKey[area] = value;
+		} else if (sscanf(line, "drumvolume %f", &volume) == 1) {
+			fDrumVolume = volume;
+		} else if (sscanf(line, "bassvolume %f", &volume) == 1) {
+			fBassVolume = volume;
 		} else if (sscanf(line, "%31s %d", word, &value) == 2) {
 			if (strcmp(word, "slapbass") == 0)
 				fSlapBassProgram = value;
@@ -437,8 +460,9 @@ MusicRenderer::SaveConfig(const char* path) const
 		"Mercenary", "Return of Fox Hunter", "Just Another Dead Soldier"
 	};
 	fprintf(fp, "# Metal Gear music instruments (General MIDI program numbers 0-127)\n"
+		"# Set for this SoundFont (a file for another one is replaced):\ntuning %s\n\n"
 		"# music <sound id> <channel 0-2> <program> <low program or -1> <split key>"
-		" <volume> <pan 0-1> [transpose]\n");
+		" <volume> <pan 0-1> [transpose]\n", kTuning);
 	for (int m = 0; m < kMusicCount; m++) {
 		fprintf(fp, "\n# %s\n", kNames[m]);
 		for (int a = 0; a < kAreas; a++) {
@@ -448,9 +472,9 @@ MusicRenderer::SaveConfig(const char* path) const
 		}
 		fprintf(fp, "gain %02X %.2f\n", 0x29 + m * 3, fSongGain[m]);
 	}
-	fprintf(fp, "\n# bass instruments of the original\nslapbass %d\nbass %d\n",
-		fSlapBassProgram, fBassProgram);
-	fprintf(fp, "\n# drum kit: drum <piece 0-11> <GM drum key>\n");
+	fprintf(fp, "\n# bass instruments of the original\nslapbass %d\nbass %d\n"
+		"bassvolume %.2f\n", fSlapBassProgram, fBassProgram, fBassVolume);
+	fprintf(fp, "\n# drum kit: drum <piece 0-11> <GM drum key>\ndrumvolume %.2f\n", fDrumVolume);
 	for (int i = 0; i < 12; i++)
 		fprintf(fp, "drum %d %d\n", i, fDrumKey[i]);
 	fprintf(fp, "\nreverb %.2f\n", fReverbWet);

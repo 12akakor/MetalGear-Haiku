@@ -58,8 +58,11 @@ main(int argc, char** argv)
 					fprintf(stderr, "cannot load %s\n", argv[2]);
 					return 1;
 				}
-				if (argc > 5)
-					audio->Music().LoadConfig(argv[5]);
+				if (argc > 5 && !audio->Music().LoadConfig(argv[5])) {
+					fprintf(stderr, "%s: not for this tuning (%s)\n", argv[5],
+						MusicRenderer::kTuning);
+					return 1;
+				}
 			}
 			audio->SetMode(mode == 1 ? GameAudio::kEnhanced : GameAudio::kClassic);
 			audio->Driver().SetSound((uint8_t)(0x29 + 3 * m));

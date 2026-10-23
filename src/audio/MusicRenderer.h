@@ -47,6 +47,9 @@ public:
 	inline	bool		Ready() const;
 			void		SetRate(int rate);
 	// Reads instrument choices; missing entries keep the defaults.
+	static const char* const kTuning;
+
+			// False (and nothing changed) for a file set for another SoundFont.
 			bool		LoadConfig(const char* path);
 			bool		SaveConfig(const char* path) const;
 
