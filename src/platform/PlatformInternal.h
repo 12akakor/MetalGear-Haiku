@@ -15,6 +15,13 @@
 void PlatInternalSetKey(MOGKey key, bool down);
 void PlatInternalClearKeys(void);
 void PlatInternalPushEvent(int type, MOGKey key, int modifiers);
+void PlatInternalPushSetting(int setting, int value);
+// A dropped file: kept for PlatDroppedFile(), PLAT_EV_FILE pushed.
+void PlatInternalPushFile(const char* path);
+
+// HD overlay set by the game for the next picture (NULL: none).
+const uint32_t* const* PlatInternalHdTiles(void);
+const uint8_t* PlatInternalHdLocal(void);
 bool PlatInternalPopEvent(PlatEvent* event);
 bool PlatInternalInputOverride(void);
 

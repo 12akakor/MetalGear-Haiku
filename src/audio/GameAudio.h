@@ -36,6 +36,8 @@ public:
 	inline	int			Rate() const;
 	inline	bool		LoadSoundFont(const char* path);
 			void		SetMode(Mode mode);
+	// Stereo of the tone generator (original sound and sound effects).
+			void		SetStereoWidth(float width);
 	inline	Mode		GetMode() const;
 
 	inline	SoundDriver&	Driver();

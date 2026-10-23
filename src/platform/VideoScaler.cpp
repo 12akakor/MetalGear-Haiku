@@ -892,3 +892,174 @@ ScalerNext(Scaler* current)
 		return ScalerForName("xbr");
 	return ScalerForName("nearest");
 }
+
+
+void
+ScalerPlacement(const Scaler* scaler, int srcWidth, int srcHeight, int sourceFactor,
+	int dstWidth, int dstHeight, int* x, int* y, int* width, int* height)
+{
+	if (strcmp(scaler->Name(), "nearest") == 0) {
+		int factor;
+		NearestScaler::Layout(srcWidth, srcHeight, dstWidth, dstHeight, &factor, x, y);
+		*width = srcWidth * factor;
+		*height = srcHeight * factor;
+		return;
+	}
+	int factor = sourceFactor < 1 ? 1 : sourceFactor;
+	ScalerFit(srcWidth / factor, srcHeight / factor, dstWidth, dstHeight, x, y, width,
+		height);
+}
+
+
+void
+HdCompose(const uint32_t* const* tiles, const uint8_t* local, int srcWidth, int srcHeight,
+	uint32_t* dst, int dstStride, int x, int y, int width, int height)
+{
+	HdComposer composer;
+	composer.Compose(tiles, local, srcWidth, srcHeight, dst, dstStride, x, y, width, height);
+}
+
+
+namespace {
+
+// Bilinear sample of a 32x32 tile at texel position tx, ty (x 256),
+// kept inside the tile.
+inline uint32_t
+SampleTile(const uint32_t* tile, int tx, int ty)
+{
+	const int kSize = 32;
+	if (tx < 0)
+		tx = 0;
+	if (ty < 0)
+		ty = 0;
+	if (tx > (kSize - 1) * 256)
+		tx = (kSize - 1) * 256;
+	if (ty > (kSize - 1) * 256)
+		ty = (kSize - 1) * 256;
+	int x0 = tx >> 8, y0 = ty >> 8;
+	uint32_t fx = static_cast<uint32_t>(tx & 255), fy = static_cast<uint32_t>(ty & 255);
+	int x1 = x0 < kSize - 1 ? x0 + 1 : x0;
+	int y1 = y0 < kSize - 1 ? y0 + 1 : y0;
+	uint32_t a = tile[y0 * kSize + x0], b = tile[y0 * kSize + x1];
+	uint32_t c = tile[y1 * kSize + x0], d = tile[y1 * kSize + x1];
+	// red and blue together, then green
+	uint32_t topRB = ((a & 0xff00ff) * (256 - fx) + (b & 0xff00ff) * fx) >> 8 & 0xff00ff;
+	uint32_t bottomRB = ((c & 0xff00ff) * (256 - fx) + (d & 0xff00ff) * fx) >> 8 & 0xff00ff;
+	uint32_t topG = ((a & 0x00ff00) * (256 - fx) + (b & 0x00ff00) * fx) >> 8 & 0x00ff00;
+	uint32_t bottomG = ((c & 0x00ff00) * (256 - fx) + (d & 0x00ff00) * fx) >> 8 & 0x00ff00;
+	uint32_t rb = (topRB * (256 - fy) + bottomRB * fy) >> 8 & 0xff00ff;
+	uint32_t g = (topG * (256 - fy) + bottomG * fy) >> 8 & 0x00ff00;
+	return 0xff000000u | rb | g;
+}
+
+}	// namespace
+
+
+void
+HdComposer::_Compute(int px, int py, const uint32_t* tile, uint8_t local)
+{
+	const int kScale = 4;
+	int baseX = (local & 7) * kScale * 256 - 128;
+	int baseY = (local >> 3) * kScale * 256 - 128;
+	for (int j = fRowStart[py]; j < fRowStart[py + 1]; j++) {
+		uint32_t* out = fCache.data() + static_cast<size_t>(j) * fWidth;
+		int ty = baseY + fRowFraction[j];
+		for (int i = fColumnStart[px]; i < fColumnStart[px + 1]; i++)
+			out[i] = SampleTile(tile, baseX + fColumnFraction[i], ty);
+	}
+}
+
+
+void
+HdComposer::Compose(const uint32_t* const* tiles, const uint8_t* local, int srcWidth,
+	int srcHeight, uint32_t* dst, int dstStride, int x, int y, int width, int height)
+{
+	const int kScale = 4;
+	if (width < 1 || height < 1)
+		return;
+	size_t count = static_cast<size_t>(srcWidth) * srcHeight;
+	if (srcWidth != fSrcWidth || srcHeight != fSrcHeight || width != fWidth
+		|| height != fHeight) {
+		fSrcWidth = srcWidth;
+		fSrcHeight = srcHeight;
+		fWidth = width;
+		fHeight = height;
+		fCache.assign(static_cast<size_t>(width) * height, 0);
+		fTiles.assign(count, NULL);
+		fLocal.assign(count, 0);
+		// Output columns of each source column (by the output pixel
+		// centre), and the place inside the source pixel.
+		fColumnStart.assign(srcWidth + 1, width);
+		fColumnFraction.resize(width);
+		for (int i = width - 1; i >= 0; i--) {
+			double u = (i + 0.5) * srcWidth / width;
+			int p = std::min(static_cast<int>(u), srcWidth - 1);
+			fColumnStart[p] = i;
+			fColumnFraction[i] = static_cast<int>((u - p) * kScale * 256);
+		}
+		for (int p = srcWidth - 1; p >= 0; p--)
+			fColumnStart[p] = std::min(fColumnStart[p], fColumnStart[p + 1]);
+		fRowStart.assign(srcHeight + 1, height);
+		fRowFraction.resize(height);
+		for (int j = height - 1; j >= 0; j--) {
+			double v = (j + 0.5) * srcHeight / height;
+			int p = std::min(static_cast<int>(v), srcHeight - 1);
+			fRowStart[p] = j;
+			fRowFraction[j] = static_cast<int>((v - p) * kScale * 256);
+		}
+		for (int p = srcHeight - 1; p >= 0; p--)
+			fRowStart[p] = std::min(fRowStart[p], fRowStart[p + 1]);
+	}
+
+	// What changed is computed again (on several threads when it is much,
+	// a new room).
+	std::vector<int> changed;
+	for (size_t p = 0; p < count; p++) {
+		if (tiles[p] != NULL && (tiles[p] != fTiles[p] || local[p] != fLocal[p]))
+			changed.push_back(static_cast<int>(p));
+		fTiles[p] = tiles[p];
+		fLocal[p] = local[p];
+	}
+	auto work = [&](size_t from, size_t to) {
+		for (size_t k = from; k < to; k++) {
+			int p = changed[k];
+			_Compute(p % srcWidth, p / srcWidth, tiles[p], local[p]);
+		}
+	};
+	if (changed.size() > count / 8) {
+		const size_t kThreads = 4;
+		std::vector<std::thread> threads;
+		size_t step = (changed.size() + kThreads - 1) / kThreads;
+		for (size_t t = 1; t < kThreads; t++) {
+			size_t from = std::min(changed.size(), t * step);
+			size_t to = std::min(changed.size(), from + step);
+			threads.emplace_back(work, from, to);
+		}
+		work(0, std::min(changed.size(), step));
+		for (std::thread& thread : threads)
+			thread.join();
+	} else
+		work(0, changed.size());
+
+	// Copy the HD pixels over the picture, a source pixel at a time.
+	for (int py = 0; py < srcHeight; py++) {
+		const uint32_t* const* tileRow = tiles + static_cast<size_t>(py) * srcWidth;
+		for (int j = fRowStart[py]; j < fRowStart[py + 1]; j++) {
+			const uint32_t* from = fCache.data() + static_cast<size_t>(j) * fWidth;
+			uint32_t* out = dst + static_cast<size_t>(y + j) * dstStride + x;
+			int px = 0;
+			while (px < srcWidth) {
+				if (tileRow[px] == NULL) {
+					px++;
+					continue;
+				}
+				int end = px + 1;
+				while (end < srcWidth && tileRow[end] != NULL)
+					end++;
+				int c0 = fColumnStart[px], c1 = fColumnStart[end];
+				memcpy(out + c0, from + c0, sizeof(uint32_t) * static_cast<size_t>(c1 - c0));
+				px = end;
+			}
+		}
+	}
+}

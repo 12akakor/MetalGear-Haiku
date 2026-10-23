@@ -25,25 +25,37 @@
 #include <unistd.h>
 #include <vector>
 
+#include <string>
+
 #include <Alert.h>
 #include <Application.h>
 #include <Bitmap.h>
 #include <BitmapStream.h>
+#include <CheckBox.h>
 #include <Directory.h>
 #include <Entry.h>
 #include <File.h>
+#include <FilePanel.h>
 #include <FindDirectory.h>
 #include <Font.h>
+#include <GridLayout.h>
 #include <Joystick.h>
+#include <LayoutBuilder.h>
 #include <Locker.h>
+#include <Looper.h>
 #include <MediaDefs.h>
+#include <MenuField.h>
+#include <MenuItem.h>
+#include <Messenger.h>
 #include <NodeInfo.h>
 #include <OS.h>
 #include <Path.h>
+#include <PopUpMenu.h>
 #include <Roster.h>
 #include <Screen.h>
 #include <SoundPlayer.h>
 #include <String.h>
+#include <StringView.h>
 #include <TranslatorFormats.h>
 #include <TranslatorRoster.h>
 #include <View.h>
@@ -57,7 +69,9 @@ static const char* kSignature = "application/x-vnd.Akakor-MetalGear";
 static const char* kSettingsName = "MetalGear";
 
 enum {
-	kMsgRedraw = 'mgRd'
+	kMsgRedraw = 'mgRd',
+	kMsgSetting = 'mgSt',
+	kMsgUpdateSetting = 'mgSU'
 };
 
 
@@ -118,6 +132,17 @@ BBitmap* sFront = NULL;
 BBitmap* sBack = NULL;
 
 uint8 sRawKeys[16];
+
+// Fade between rooms (PlatStartTransition): the picture it starts from,
+// at the size of the window, and when. Game thread only.
+std::vector<uint32> sFromPixels;
+int sFromWidth = 0;
+int sFromHeight = 0;
+bigtime_t sTransitionStart = 0;
+bigtime_t sTransitionLength = 0;
+
+// The settings window, once opened (it hides when closed).
+BMessenger sSettingsMessenger;
 
 // Vertical sync: wanted (setting) and what the driver supports
 // (0 unknown, 1 works, -1 not supported).
@@ -223,6 +248,19 @@ public:
 		sViewWidth = static_cast<int>(width) + 1;
 		sViewHeight = static_cast<int>(height) + 1;
 		Invalidate();
+	}
+
+	// A file dropped on the picture (a ROM): the game decides.
+	virtual void MessageReceived(BMessage* message)
+	{
+		entry_ref ref;
+		if (message->WasDropped() && message->FindRef("refs", &ref) == B_OK) {
+			BPath path(&ref);
+			if (path.InitCheck() == B_OK)
+				PlatInternalPushFile(path.Path());
+			return;
+		}
+		BView::MessageReceived(message);
 	}
 
 	// The game reads the keyboard state itself; swallow key messages so
@@ -346,6 +384,17 @@ public:
 			return false;
 		}
 		return true;
+	}
+
+	// A ROM dropped on the program's icon while it runs.
+	virtual void RefsReceived(BMessage* message)
+	{
+		entry_ref ref;
+		if (message->FindRef("refs", &ref) == B_OK) {
+			BPath path(&ref);
+			if (path.InitCheck() == B_OK)
+				PlatInternalPushFile(path.Path());
+		}
 	}
 };
 
@@ -475,6 +524,16 @@ PlatAlert(const char* title, const char* text)
 	BAlert* alert = new BAlert(title, text, "OK", NULL, NULL, B_WIDTH_AS_USUAL,
 		B_WARNING_ALERT);
 	alert->Go();
+}
+
+
+int
+PlatAsk(const char* title, const char* text, const char* first, const char* second)
+{
+	BAlert* alert = new BAlert(title, text, first, second, NULL, B_WIDTH_AS_USUAL,
+		B_INFO_ALERT);
+	alert->SetShortcut(1, B_ESCAPE);
+	return alert->Go() == 0 ? 0 : 1;
 }
 
 
@@ -645,9 +704,42 @@ PlatPresent(const uint8_t* pixels)
 	}
 
 	Scaler* scaler = PlatInternalScaler();
-	scaler->Process(sConverted, sWidth, sHeight,
-		PlatInternalSourceFactor(), reinterpret_cast<uint32_t*>(sBack->Bits()),
-		width, height, static_cast<int>(sBack->BytesPerRow() / 4));
+	uint32_t* bits = reinterpret_cast<uint32_t*>(sBack->Bits());
+	int stride = static_cast<int>(sBack->BytesPerRow() / 4);
+	scaler->Process(sConverted, sWidth, sHeight, PlatInternalSourceFactor(), bits, width,
+		height, stride);
+	if (PlatInternalHdTiles() != NULL) {
+		int x, y, w, h;
+		ScalerPlacement(scaler, sWidth, sHeight, PlatInternalSourceFactor(), width, height,
+			&x, &y, &w, &h);
+		// a picture larger than the window (nearest) is not drawn in HD
+		if (x >= 0 && y >= 0 && x + w <= width && y + h <= height) {
+			static HdComposer composer;
+			composer.Compose(PlatInternalHdTiles(), PlatInternalHdLocal(), sWidth, sHeight,
+				bits, stride, x, y, w, h);
+		}
+	}
+	if (sTransitionLength > 0) {
+		bigtime_t elapsed = system_time() - sTransitionStart;
+		if (elapsed >= sTransitionLength || sFromWidth != width || sFromHeight != height)
+			sTransitionLength = 0;
+		else {
+			// cross-fade: alpha of the new picture 0-256
+			uint32 alpha = static_cast<uint32>(elapsed * 256 / sTransitionLength);
+			for (int row = 0; row < height; row++) {
+				uint32* out = bits + static_cast<size_t>(row) * stride;
+				const uint32* from = sFromPixels.data() + static_cast<size_t>(row) * width;
+				for (int i = 0; i < width; i++) {
+					uint32 a = from[i], b = out[i];
+					uint32 rb = (((a & 0xff00ff) * (256 - alpha) + (b & 0xff00ff) * alpha) >> 8)
+						& 0xff00ff;
+					uint32 g = (((a & 0x00ff00) * (256 - alpha) + (b & 0x00ff00) * alpha) >> 8)
+						& 0x00ff00;
+					out[i] = 0xff000000 | rb | g;
+				}
+			}
+		}
+	}
 	bigtime_t now = system_time();
 
 	sFrameLock.Lock();
@@ -728,6 +820,34 @@ ShowMessage(const char* text)
 	sFrameLock.Unlock();
 	printf("%s\n", text);
 	fflush(stdout);
+}
+
+
+void
+PlatShowMessage(const char* text)
+{
+	ShowMessage(text);
+}
+
+
+void
+PlatStartTransition(int ms)
+{
+	sFrameLock.Lock();
+	if (sFront != NULL && ms > 0) {
+		sFromWidth = sFront->Bounds().IntegerWidth() + 1;
+		sFromHeight = sFront->Bounds().IntegerHeight() + 1;
+		sFromPixels.resize(static_cast<size_t>(sFromWidth) * sFromHeight);
+		const uint8* src = reinterpret_cast<const uint8*>(sFront->Bits());
+		for (int row = 0; row < sFromHeight; row++) {
+			memcpy(sFromPixels.data() + static_cast<size_t>(row) * sFromWidth,
+				src + static_cast<size_t>(row) * sFront->BytesPerRow(),
+				static_cast<size_t>(sFromWidth) * 4);
+		}
+		sTransitionStart = system_time();
+		sTransitionLength = static_cast<bigtime_t>(ms) * 1000;
+	}
+	sFrameLock.Unlock();
 }
 
 
@@ -1084,4 +1204,233 @@ void
 PlatAudioUnlock(void)
 {
 	sAudioLock.Unlock();
+}
+
+
+// Settings window ----------------------------------------------------------
+
+namespace {
+
+class SettingsWindow : public BWindow {
+public:
+	SettingsWindow(const PlatSetting* settings, int count, const char* help)
+		:
+		BWindow(BRect(0, 0, 100, 100), "Metal Gear settings", B_TITLED_WINDOW,
+			B_NOT_RESIZABLE | B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS
+				| B_ASYNCHRONOUS_CONTROLS | B_CLOSE_ON_ESCAPE)
+	{
+		BGridLayout* grid = new BGridLayout(B_USE_DEFAULT_SPACING, B_USE_SMALL_SPACING);
+		for (int i = 0; i < count; i++) {
+			const PlatSetting& setting = settings[i];
+			BMessage* message = new BMessage(kMsgSetting);
+			message->AddInt32("setting", i);
+			if (setting.choices == NULL) {
+				BCheckBox* box = new BCheckBox(setting.label, message);
+				box->SetValue(setting.value != 0 ? B_CONTROL_ON : B_CONTROL_OFF);
+				box->SetEnabled(setting.enabled);
+				grid->AddView(box, 1, i);
+				fControls.push_back(box);
+				fMenus.push_back(NULL);
+			} else {
+				delete message;
+				BPopUpMenu* menu = new BPopUpMenu("choice");
+				for (int c = 0; c < setting.count; c++) {
+					BMessage* choice = new BMessage(kMsgSetting);
+					choice->AddInt32("setting", i);
+					choice->AddInt32("value", c);
+					BMenuItem* item = new BMenuItem(setting.choices[c], choice);
+					item->SetMarked(c == setting.value);
+					menu->AddItem(item);
+				}
+				BMenuField* field = new BMenuField(setting.label, menu);
+				field->SetEnabled(setting.enabled);
+				grid->AddItem(field->CreateLabelLayoutItem(), 0, i);
+				grid->AddItem(field->CreateMenuBarLayoutItem(), 1, i);
+				fControls.push_back(NULL);
+				fMenus.push_back(menu);
+			}
+		}
+
+		BLayoutBuilder::Group<> builder(this, B_VERTICAL, B_USE_DEFAULT_SPACING);
+		builder.SetInsets(B_USE_WINDOW_SPACING).Add(grid);
+		if (help != NULL && help[0] != '\0') {
+			BString text(help);
+			int32 start = 0;
+			while (start <= text.Length()) {
+				int32 end = text.FindFirst('\n', start);
+				if (end < 0)
+					end = text.Length();
+				BString line;
+				text.CopyInto(line, start, end - start);
+				BStringView* view = new BStringView("help", line.String());
+				view->SetFont(be_plain_font);
+				builder.Add(view);
+				start = end + 1;
+			}
+		}
+		if (sWindow != NULL)
+			CenterIn(sWindow->Frame());
+		else
+			CenterOnScreen();
+	}
+
+	virtual bool QuitRequested()
+	{
+		// Closing hides it; it goes when the program ends.
+		if (sGameDone)
+			return true;
+		Hide();
+		return false;
+	}
+
+	virtual void MessageReceived(BMessage* message)
+	{
+		switch (message->what) {
+			case kMsgSetting:
+			{
+				int32 setting, value;
+				if (message->FindInt32("setting", &setting) != B_OK)
+					return;
+				if (message->FindInt32("value", &value) != B_OK) {
+					BControl* control = NULL;
+					if (message->FindPointer("source",
+							reinterpret_cast<void**>(&control)) != B_OK || control == NULL)
+						return;
+					value = control->Value() == B_CONTROL_ON ? 1 : 0;
+				}
+				PlatInternalPushSetting(setting, value);
+				return;
+			}
+			case kMsgUpdateSetting:
+			{
+				int32 setting, value;
+				if (message->FindInt32("setting", &setting) != B_OK
+					|| message->FindInt32("value", &value) != B_OK || setting < 0
+					|| setting >= static_cast<int32>(fControls.size()))
+					return;
+				if (fControls[setting] != NULL)
+					fControls[setting]->SetValue(value != 0 ? B_CONTROL_ON : B_CONTROL_OFF);
+				else if (fMenus[setting] != NULL) {
+					BMenuItem* item = fMenus[setting]->ItemAt(value);
+					if (item != NULL)
+						item->SetMarked(true);
+				}
+				return;
+			}
+		}
+		BWindow::MessageReceived(message);
+	}
+
+private:
+	std::vector<BCheckBox*>	fControls;
+	std::vector<BPopUpMenu*> fMenus;
+};
+
+
+// Waits for the open panel: the chosen file, or nothing.
+class FileWaiter : public BLooper {
+public:
+	FileWaiter()
+		:
+		BLooper("Metal Gear file panel"),
+		fDone(create_sem(0, "Metal Gear file chosen")),
+		fReleased(false)
+	{
+	}
+
+	virtual ~FileWaiter()
+	{
+		delete_sem(fDone);
+	}
+
+	virtual void MessageReceived(BMessage* message)
+	{
+		entry_ref ref;
+		if (message->what == B_REFS_RECEIVED && message->FindRef("refs", &ref) == B_OK) {
+			BPath path(&ref);
+			if (path.InitCheck() == B_OK)
+				fPath = path.Path();
+			_Release();
+			return;
+		}
+		if (message->what == B_CANCEL) {
+			_Release();
+			return;
+		}
+		BLooper::MessageReceived(message);
+	}
+
+	sem_id Done() const { return fDone; }
+	const BString& Path() const { return fPath; }
+
+private:
+	void _Release()
+	{
+		if (!fReleased) {
+			fReleased = true;
+			release_sem(fDone);
+		}
+	}
+
+	sem_id	fDone;
+	bool	fReleased;
+	BString	fPath;
+};
+
+}	// namespace
+
+
+void
+PlatShowSettings(const PlatSetting* settings, int count, const char* help)
+{
+	if (sSettingsMessenger.IsValid()) {
+		BLooper* looper;
+		BWindow* window = dynamic_cast<BWindow*>(sSettingsMessenger.Target(&looper));
+		if (window != NULL && window->Lock()) {
+			if (window->IsHidden())
+				window->Show();
+			window->Activate();
+			window->Unlock();
+			return;
+		}
+	}
+	SettingsWindow* window = new SettingsWindow(settings, count, help);
+	sSettingsMessenger = BMessenger(window);
+	window->Show();
+}
+
+
+void
+PlatUpdateSetting(int index, int value)
+{
+	if (!sSettingsMessenger.IsValid())
+		return;
+	BMessage message(kMsgUpdateSetting);
+	message.AddInt32("setting", index);
+	message.AddInt32("value", value);
+	sSettingsMessenger.SendMessage(&message);
+}
+
+
+bool
+PlatChooseFile(const char* title, char* path, size_t size)
+{
+	FileWaiter* waiter = new FileWaiter;
+	waiter->Run();
+	BMessenger target(waiter);
+	BFilePanel* panel = new BFilePanel(B_OPEN_PANEL, &target, NULL, B_FILE_NODE, false);
+	if (panel->Window()->Lock()) {
+		panel->Window()->SetTitle(title);
+		panel->Window()->Unlock();
+	}
+	panel->Show();
+	while (acquire_sem(waiter->Done()) == B_INTERRUPTED)
+		;
+	delete panel;
+	bool chosen = waiter->Path().Length() > 0;
+	if (chosen)
+		snprintf(path, size, "%s", waiter->Path().String());
+	if (waiter->Lock())
+		waiter->Quit();
+	return chosen;
 }

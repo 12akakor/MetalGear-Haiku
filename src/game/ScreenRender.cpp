@@ -9,7 +9,11 @@
 #include <string.h>
 #include <vector>
 
+#include "Options.h"
 #include "Screen.h"
+
+
+Options gOptions;
 
 
 uint32_t
@@ -39,7 +43,11 @@ RenderSprites(const Screen& s, int line, uint8_t* colors, bool* set)
 	int vline = (line + s.Register(23)) & 0xff;
 	const uint8_t* vram = s.fVram;
 
-	int visible[8];
+	// The VDP shows 8 sprites per line; without flicker all 32 in the room.
+	// The HUD rows keep the limit: in the elevators 16 sprites there hide
+	// the others (SetHUDSprMask).
+	int limit = gOptions.noFlicker && line < 192 ? 32 : 8;
+	int visible[32];
 	int count = 0;
 	for (int n = 0; n < 32; n++) {
 		uint8_t y = vram[(attrTable + n * 4) & 0x1ffff];
@@ -48,7 +56,7 @@ RenderSprites(const Screen& s, int line, uint8_t* colors, bool* set)
 		int row = (vline - y - 1) & 0xff;
 		if (row >= size)
 			continue;
-		if (count == 8)
+		if (count == limit)
 			break;
 		visible[count++] = n;
 	}
@@ -124,8 +132,10 @@ RenderScreen(const Screen& s, uint32_t* out)
 
 
 void
-RenderScreenIndexed(const Screen& s, uint8_t* out)
+RenderScreenIndexed(const Screen& s, uint8_t* out, uint8_t* sprites)
 {
+	if (sprites != NULL)
+		memset(sprites, 0, kScreenWidth * kScreenHeight);
 	uint8_t backdrop = static_cast<uint8_t>(s.Register(7) & 0x0f);
 	int lines = ((s.Register(9) & 0x80) != 0) ? 212 : 192;
 	bool enabled = (s.Register(1) & 0x40) != 0;
@@ -146,9 +156,11 @@ RenderScreenIndexed(const Screen& s, uint8_t* out)
 		RenderSprites(s, line, spriteColors, spriteSet);
 		for (int x = 0; x < kScreenWidth; x++) {
 			uint8_t c;
-			if (spriteSet[x])
+			if (spriteSet[x]) {
 				c = spriteColors[x];
-			else {
+				if (sprites != NULL)
+					sprites[line * kScreenWidth + x] = 1;
+			} else {
 				uint8_t b = src[x >> 1];
 				c = ((x & 1) != 0) ? (b & 0x0f) : static_cast<uint8_t>(b >> 4);
 			}

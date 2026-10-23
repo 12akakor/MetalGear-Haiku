@@ -6,6 +6,8 @@
 
 // Platform code shared by all back ends: key state, event queue, palette.
 #include <mutex>
+#include <stdio.h>
+#include <string>
 #include <string.h>
 
 #include "PlatformInternal.h"
@@ -22,6 +24,10 @@ const int kQueueSize = 64;
 PlatEvent sQueue[kQueueSize];
 int sQueueHead = 0;
 int sQueueCount = 0;
+
+std::string sDropped;
+const uint32_t* const* sHdTiles = NULL;
+const uint8_t* sHdLocal = NULL;
 
 uint8_t sPalette[768];
 Scaler* sScaler = NULL;
@@ -58,7 +64,70 @@ PlatInternalPushEvent(int type, MOGKey key, int modifiers)
 	event.type = type;
 	event.key = key;
 	event.modifiers = modifiers;
+	event.setting = 0;
+	event.value = 0;
 	sQueueCount++;
+}
+
+
+void
+PlatInternalPushSetting(int setting, int value)
+{
+	std::lock_guard<std::mutex> guard(sLock);
+	if (sQueueCount == kQueueSize)
+		return;
+	PlatEvent& event = sQueue[(sQueueHead + sQueueCount) % kQueueSize];
+	event.type = PLAT_EV_SETTING;
+	event.key = MOGK_UNKNOWN;
+	event.modifiers = 0;
+	event.setting = setting;
+	event.value = value;
+	sQueueCount++;
+}
+
+
+void
+PlatInternalPushFile(const char* path)
+{
+	{
+		std::lock_guard<std::mutex> guard(sLock);
+		sDropped = path;
+	}
+	PlatInternalPushEvent(PLAT_EV_FILE, MOGK_UNKNOWN, 0);
+}
+
+
+bool
+PlatDroppedFile(char* path, size_t size)
+{
+	std::lock_guard<std::mutex> guard(sLock);
+	if (sDropped.empty())
+		return false;
+	snprintf(path, size, "%s", sDropped.c_str());
+	sDropped.clear();
+	return true;
+}
+
+
+void
+PlatSetHdOverlay(const uint32_t* const* tiles, const uint8_t* local)
+{
+	sHdTiles = tiles;
+	sHdLocal = local;
+}
+
+
+const uint32_t* const*
+PlatInternalHdTiles(void)
+{
+	return sHdTiles;
+}
+
+
+const uint8_t*
+PlatInternalHdLocal(void)
+{
+	return sHdLocal;
 }
 
 

@@ -65,9 +65,7 @@ ToneSynth::Reset()
 	memset(fReg, 0, sizeof(fReg));
 	fReg[7] = 0xff;
 	fMask = 7;
-	fPan[0] = 0.35f;
-	fPan[1] = 0.65f;
-	fPan[2] = 0.5f;
+	SetStereoWidth(fStereoWidth);
 	for (int i = 0; i < 3; i++) {
 		fPhase[i] = 0;
 		fLevel[i] = 0;
@@ -86,6 +84,20 @@ ToneSynth::Reset()
 		fSccPhase[i] = 0;
 		fSccLevel[i] = 0;
 	}
+}
+
+
+void
+ToneSynth::SetStereoWidth(float width)
+{
+	if (width < 0)
+		width = 0;
+	if (width > 1)
+		width = 1;
+	fStereoWidth = width;
+	fPan[0] = 0.5f - width / 2;
+	fPan[1] = 0.5f + width / 2;
+	fPan[2] = 0.5f;
 }
 
 

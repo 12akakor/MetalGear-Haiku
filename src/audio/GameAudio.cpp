@@ -44,6 +44,13 @@ GameAudio::SetMode(Mode mode)
 
 
 void
+GameAudio::SetStereoWidth(float width)
+{
+	fSynth.SetStereoWidth(width);
+}
+
+
+void
 GameAudio::SoundRegister(int reg, uint8_t value)
 {
 	fSynth.Write(reg, value);

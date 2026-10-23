@@ -11,6 +11,7 @@
 #include "Common.h"
 #include "GameGfx.h"
 #include "GfxBasic.h"
+#include "Options.h"
 #include "Rom.h"
 #include "Screen.h"
 #include "Structures.h"
@@ -382,6 +383,8 @@ UpdateSpritesShuf()
 {
 	uint8_t offset = static_cast<uint8_t>((Ram(SprShuffleOffset) + 0x68) & 0x78);
 	Ram(SprShuffleOffset) = offset;
+	if (gOptions.noFlicker)
+		offset = 0;	// always the same order (the variable still rotates)
 	uint32_t vram = Ram16(SprColAddress);
 	uint8_t a = static_cast<uint8_t>(offset * 2);
 	for (int i = 0; i < 16; i++) {

@@ -14,6 +14,7 @@
 // The back end owns main(). It initialises itself and then calls GameMain()
 // on the thread that runs the game.
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "Keys.h"
@@ -75,6 +76,51 @@ void PlatSetSourceFactor(int factor);
 // Shows a message box and waits until it is closed.
 void PlatAlert(const char* title, const char* text);
 
+// Asks with two buttons and waits; returns 0 for the first, 1 for the
+// second.
+int PlatAsk(const char* title, const char* text, const char* first, const char* second);
+
+// Shows a short message over the picture for a few seconds.
+void PlatShowMessage(const char* text);
+
+
+// Picture improvements ---------------------------------------------------
+
+// HD tiles over the next picture (PlatPresent()): per pixel of the picture
+// the 32x32 tile (0xffRRGGBB) or NULL, and the place in its 8x8 cell
+// (x | y << 3). NULL: no HD tiles.
+void PlatSetHdOverlay(const uint32_t* const* tiles, const uint8_t* local);
+
+// Fades from the picture shown now to the following ones in 'ms'
+// milliseconds.
+void PlatStartTransition(int ms);
+
+
+// Settings window --------------------------------------------------------
+
+struct PlatSetting {
+	const char*			label;
+	const char* const*	choices;	// NULL: a check box
+	int					count;		// number of choices
+	int					value;		// check box 0 or 1, else the choice
+	bool				enabled;
+};
+
+// Opens the settings window, or brings it to the front. Changes arrive as
+// PLAT_EV_SETTING events. 'help' is shown below the settings.
+void PlatShowSettings(const PlatSetting* settings, int count, const char* help);
+// A value changed in the game (a key): shown in the window if it is open.
+void PlatUpdateSetting(int index, int value);
+
+
+// Files --------------------------------------------------------------------
+
+// Lets the player choose a file and waits; false when cancelled.
+bool PlatChooseFile(const char* title, char* path, size_t size);
+
+// After PLAT_EV_FILE: the path of the file that was dropped.
+bool PlatDroppedFile(char* path, size_t size);
+
 
 // Time ------------------------------------------------------------------
 
@@ -87,7 +133,9 @@ void PlatSleepMs(uint32_t ms);
 enum {
 	PLAT_EV_NONE = 0,
 	PLAT_EV_KEYDOWN,
-	PLAT_EV_QUIT
+	PLAT_EV_QUIT,
+	PLAT_EV_SETTING,	// changed in the settings window: setting, value
+	PLAT_EV_FILE		// a file dropped on the window: PlatDroppedFile()
 };
 
 enum {
@@ -101,6 +149,8 @@ struct PlatEvent {
 	int		type;
 	MOGKey	key;
 	int		modifiers;
+	int		setting;	// PLAT_EV_SETTING: index and new value
+	int		value;
 };
 
 // Returns false when there are no more events.

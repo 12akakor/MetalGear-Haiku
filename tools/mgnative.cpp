@@ -2,14 +2,17 @@
  * Runs the native game without a window: frames as PPM, sound as WAV.
  *
  *   mgnative <rom> <ticks> [-shot n,n,...] [-every n] [-keys file] [-out dir]
- *            [-wav file] [-sf2 soundfont] [-scc]
+ *            [-wav file] [-sf2 soundfont] [-scc] [-noflicker] [-hd dir]
  */
 #include "../src/audio/GameAudio.h"
 #include "../src/game/GameData.h"
 #include "../src/game/GameMain.h"
+#include "../src/game/HdTiles.h"
 #include "../src/game/Input.h"
+#include "../src/game/Options.h"
 #include "../src/game/Screen.h"
 #include "../src/game/ScreenRender.h"
+#include "../src/platform/VideoScaler.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,13 +22,14 @@
 #include <vector>
 
 static void
-write_ppm(const std::string& path, const uint32_t* p)
+write_ppm(const std::string& path, const uint32_t* p, int width = kScreenWidth,
+	int height = kScreenHeight)
 {
 	FILE* fp = fopen(path.c_str(), "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "P6\n%d %d\n255\n", kScreenWidth, kScreenHeight);
-	for (int i = 0; i < kScreenWidth * kScreenHeight; i++) {
+	fprintf(fp, "P6\n%d %d\n255\n", width, height);
+	for (int i = 0; i < width * height; i++) {
 		uint8_t rgb[3] = { (uint8_t)(p[i] >> 16), (uint8_t)(p[i] >> 8), (uint8_t)p[i] };
 		fwrite(rgb, 1, 3, fp);
 	}
@@ -70,6 +74,12 @@ main(int argc, char** argv)
 			sf2 = argv[++i];
 		else if (!strcmp(argv[i], "-scc"))
 			scc = true;
+		else if (!strcmp(argv[i], "-noflicker"))
+			gOptions.noFlicker = true;
+		else if (!strcmp(argv[i], "-hd") && i + 1 < argc) {
+			gOptions.hdTiles = LoadHdTiles(argv[++i]) > 0;
+			printf("%d HD tiles\n", HdTileCount());
+		}
 	}
 	struct Key { long tick; int row, bit, down; };
 	std::vector<Key> script;
@@ -110,6 +120,22 @@ main(int argc, char** argv)
 			char name[64];
 			snprintf(name, sizeof(name), "/native_%05ld.ppm", t);
 			write_ppm(outDir + name, frame.data());
+			if (gOptions.hdTiles) {
+				// as the game shows it: xBR 4x, HD tiles over it
+				std::vector<uint8_t> indexed(kScreenWidth * kScreenHeight);
+				std::vector<uint8_t> sprites(indexed.size()), local(indexed.size());
+				std::vector<const uint32_t*> tiles(indexed.size());
+				RenderScreenIndexed(gScreen, indexed.data(), sprites.data());
+				std::vector<uint32_t> big(frame.size() * 16);
+				XbrScaler::Scale(frame.data(), kScreenWidth, kScreenHeight, 4, big.data());
+				if (HdBuildOverlay(gScreen, sprites.data(), tiles.data(), local.data())) {
+					HdCompose(tiles.data(), local.data(), kScreenWidth, kScreenHeight,
+						big.data(), kScreenWidth * 4, 0, 0, kScreenWidth * 4,
+						kScreenHeight * 4);
+				}
+				snprintf(name, sizeof(name), "/hd_%05ld.ppm", t);
+				write_ppm(outDir + name, big.data(), kScreenWidth * 4, kScreenHeight * 4);
+			}
 		}
 		if (gUnported != NULL) {
 			printf("tick %ld: not rewritten yet: %s\n", t, gUnported);

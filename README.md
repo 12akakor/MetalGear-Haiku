@@ -76,9 +76,11 @@ bit for bit.
 Tested on Haiku R1/beta6 x86_64 (hrev59866+92), in VirtualBox.
 
     make
-    mkdir -p ~/config/settings/MetalGear
-    cp MetalGear.rom ~/config/settings/MetalGear/
     ./MetalGear
+
+Without a ROM the game asks for one (a file panel) and keeps a copy as
+`~/config/settings/MetalGear/MetalGear.rom`. A ROM dropped on the game
+window (or on the program's icon) is played at once and kept the same way.
 
 The enhanced music uses `data/MetalGear-GeneralUser.sf2` (7 MB, included):
 the instruments and drums of GeneralUser GS 2.0.3 by S. Christian Collins
@@ -103,12 +105,42 @@ Metal Gear uses F1-F5 itself):
 
 | Key | Function |
 |---|---|
-| F7 | Next filter (xBR, nearest, sharp) |
+| F6 | Settings window |
+| F7 | Next picture filter (xBR, sharp, nearest) |
 | F8 | Show or hide the timing display |
 | F9 or Print Screen | Screenshot (PNG in the home folder) |
 | F10 | Music: enhanced, original sound, original sound with SCC |
 | F11 | Full screen on or off |
 | F12 or Alt+Q | Quit |
+
+### Settings (F6)
+
+Kept in `~/config/settings/MetalGear/MetalGear.settings`. None of them
+changes how the game plays.
+
+| Setting | |
+|---|---|
+| Picture | smooth (xBR), sharp pixels, or pixels in whole steps |
+| Music | enhanced (SoundFont), original, original with SCC |
+| Stereo | the three voices of the original sound: mono, a little, wide |
+| No sprite flicker | all sprites on every line in a fixed order (the MSX shows 8 per line and rotates them); the HUD rows keep the limit the elevators use |
+| HD room tiles | room tiles from `hd/tiles` (see below) |
+| Smooth room changes | a short cross-fade into the next room |
+| Full screen, wait for the screen refresh | |
+
+### HD room tiles
+
+The game shows a room tile in HD when `hd/tiles/<key>.png` exists for it
+(in the settings folder or next to the program); everything else keeps the
+filtered picture. Make the automatic set from your own ROM (needs python3
+with numpy, scipy and Pillow; it can also run on another computer, then
+copy the `hd` folder):
+
+    tools/hd/make_hd.sh MetalGear.rom
+
+Own drawings go in `hd/tiles` too and take priority; see
+`docs/02-hd-tekenen.md` (Dutch) and `mg-hdtool`. Tiles are shown while the
+room has its normal palette (not during fades or in the dark).
 
 ## Building the ROM (needed for everything)
 

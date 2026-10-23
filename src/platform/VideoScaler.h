@@ -172,6 +172,44 @@ private:
 void ScalerFit(int srcWidth, int srcHeight, int dstWidth, int dstHeight,
 	int* x, int* y, int* width, int* height);
 
+// Where a scaler puts a srcWidth x srcHeight picture in dstWidth x
+// dstHeight: the rectangle x, y, width, height.
+void ScalerPlacement(const Scaler* scaler, int srcWidth, int srcHeight,
+	int sourceFactor, int dstWidth, int dstHeight, int* x, int* y, int* width,
+	int* height);
+
+// Paints HD tiles over a scaled picture. Per source pixel: 'tiles' the
+// 32x32 tile (0xffRRGGBB) or NULL to keep what is there, 'local' its place
+// in the 8x8 cell (x | y << 3). The picture fills x, y, width, height of
+// dst (ScalerPlacement()). Smooth (bilinear) inside each tile.
+void HdCompose(const uint32_t* const* tiles, const uint8_t* local, int srcWidth,
+	int srcHeight, uint32_t* dst, int dstStride, int x, int y, int width,
+	int height);
+
+// HdCompose() for a stream of frames: keeps the result per source pixel
+// and only computes again what changed (most frames: a few sprites).
+class HdComposer {
+public:
+			void			Compose(const uint32_t* const* tiles, const uint8_t* local,
+								int srcWidth, int srcHeight, uint32_t* dst,
+								int dstStride, int x, int y, int width, int height);
+
+private:
+			void			_Compute(int px, int py, const uint32_t* tile, uint8_t local);
+
+			int				fSrcWidth = 0;
+			int				fSrcHeight = 0;
+			int				fWidth = 0;
+			int				fHeight = 0;
+			std::vector<uint32_t> fCache;	// width x height
+			std::vector<const uint32_t*> fTiles;	// last frame
+			std::vector<uint8_t> fLocal;
+			std::vector<int> fColumnStart;	// per source column, + 1 entry
+			std::vector<int> fRowStart;
+			std::vector<int> fColumnFraction;	// per output column
+			std::vector<int> fRowFraction;
+};
+
 // Returns the scaler for a name ("nearest", "sharp", "xbr"); unknown names
 // give "xbr". Never NULL.
 Scaler* ScalerForName(const char* name);

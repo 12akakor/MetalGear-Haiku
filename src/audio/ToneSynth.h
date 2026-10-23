@@ -34,6 +34,9 @@ public:
 	// Voices that are heard (bit 0 = A, 1 = B, 2 = C).
 	inline	void		SetVoiceMask(int mask);
 	inline	void		SetPan(int voice, float pan);
+	// Voice A left, B right, C in the middle: 0 mono, 0.3 a little (the
+	// default), 1 fully apart.
+			void		SetStereoWidth(float width);
 	inline	void		SetScc(bool on, float gain = 0.4f);
 	inline	bool		Scc() const;
 
@@ -62,6 +65,7 @@ private:
 			float		fLevel[3];	// smoothed volume (no clicks)
 			float		fDcLeft, fDcRight, fDcInLeft, fDcInRight;
 
+			float		fStereoWidth = 0.3f;
 			bool		fScc;
 			float		fSccGain;
 			double		fSccPhase[3];

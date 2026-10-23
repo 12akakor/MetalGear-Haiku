@@ -239,14 +239,14 @@ main(int argc, char** argv)
 	for (auto& key : order) {
 		Tile& t = tiles[key];
 		stbi_write_png((out + "/tiles/" + key + ".png").c_str(), 8, 8, 3, t.rgb.data(), 24);
-		fprintf(csv, "%s,%d,%d,%d,", key.c_str(), t.tileset, t.fPalette, t.position);
+		fprintf(csv, "%s,%d,%d,%d,", key.c_str(), t.tileset, t.palette, t.position);
 		bool first = true;
 		for (int r : t.rooms) {
 			fprintf(csv, first ? "%d" : " %d", r);
 			first = false;
 		}
 		fprintf(csv, "\n");
-		perSet[std::make_pair(t.tileset, t.fPalette)].push_back(key);
+		perSet[std::make_pair(t.tileset, t.palette)].push_back(key);
 	}
 	fclose(csv);
 	const int scale = 8, cell = 8 * scale + 2, columns = 16;

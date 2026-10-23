@@ -7,8 +7,11 @@
 // Loading and drawing rooms, rewritten from Banks0123.asm.
 #include "RoomGfx.h"
 
+#include "HdTiles.h"
+
 #include "GfxBasic.h"
 #include "Rom.h"
+#include "Screen.h"
 
 
 namespace {
@@ -143,6 +146,7 @@ SetRoomPal2(uint8_t palette)
 	SetBanks(4);
 	SetPalette(GetPointerDE2A(SYM(idxRoomPalettes), palette));
 	SetBanks(1);
+	HdSetRoomPalette(palette, gScreen);	// for the HD tiles
 }
 
 

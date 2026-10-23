@@ -24,7 +24,9 @@
 #include "game/GameData.h"
 #include "game/GameMain.h"
 #include "game/GameRam.h"
+#include "game/HdTiles.h"
 #include "game/Input.h"
+#include "game/Options.h"
 #include "game/RamSymbols.h"
 #include "game/SaveLoad.h"
 #include "game/Screen.h"
@@ -161,6 +163,69 @@ LoadRom(int argc, char** argv, std::string* message)
 }
 
 
+// Copies a ROM the player chose into the settings folder as MetalGear.rom,
+// so it is found next time (one that is there already becomes .old).
+void
+KeepRom(const char* path)
+{
+	std::string target = std::string(PlatSettingsDir()) + "/MetalGear.rom";
+	if (target == path)
+		return;
+	FILE* in = fopen(path, "rb");
+	if (in == NULL)
+		return;
+	std::vector<char> data;
+	char buf[65536];
+	size_t n;
+	while ((n = fread(buf, 1, sizeof(buf), in)) > 0)
+		data.insert(data.end(), buf, buf + n);
+	fclose(in);
+	if (FileExists(target))
+		rename(target.c_str(), (target + ".old").c_str());
+	FILE* out = fopen(target.c_str(), "wb");
+	if (out == NULL)
+		return;
+	fwrite(data.data(), 1, data.size(), out);
+	fclose(out);
+}
+
+
+// No usable ROM: let the player choose one.
+bool
+ChooseRom(std::string message)
+{
+	for (;;) {
+		std::string text = message + "\n\nChoose the ROM file now?";
+		if (PlatAsk("Metal Gear", text.c_str(), "Choose ROM\xE2\x80\xA6", "Quit") != 0)
+			return false;
+		char path[1024];
+		if (!PlatChooseFile("Choose the Metal Gear ROM", path, sizeof(path)))
+			continue;
+		std::string error;
+		if (LoadGameRom(path, &error)) {
+			KeepRom(path);
+			return true;
+		}
+		message = std::string(path) + ":\n" + error;
+	}
+}
+
+
+// HD tiles: hd/tiles next to the program or in the settings folder.
+void
+FindHdTiles()
+{
+	std::string app = PlatAppDir();
+	for (const std::string& dir : { std::string(PlatSettingsDir()) + "/hd", app + "/hd",
+			app + "/data/hd", app + "/../hd" }) {
+		if (LoadHdTiles(dir) > 0) {
+			printf("  HD tiles: %d in %s\n", HdTileCount(), dir.c_str());
+			return;
+		}
+	}
+}
+
+
 // A SoundFont of the player's own in the settings folder comes first,
 // then the one that comes with the game (data/MetalGear-GeneralUser.sf2),
 // then the system's.
@@ -251,6 +316,116 @@ AudioPush(const std::vector<int16_t>& samples)
 	PlatAudioUnlock();
 }
 
+// Settings (settings window, F keys), kept in MetalGear.settings.
+enum {
+	kSetFilter,
+	kSetMusic,
+	kSetStereo,
+	kSetNoFlicker,
+	kSetHd,
+	kSetFade,
+	kSetFullscreen,
+	kSetVsync,
+	kSetCount
+};
+
+const char* const kFilterNames[] = { "xbr", "sharp", "nearest" };
+const char* const kFilterChoices[] = { "Smooth (xBR)", "Sharp pixels",
+	"Pixels, whole steps" };
+const char* const kMusicNames[] = { "enhanced", "original", "scc" };
+const char* const kMusicChoices[] = { "Enhanced (SoundFont)", "Original",
+	"Original with SCC" };
+const char* const kStereoChoices[] = { "Mono", "A little", "Wide" };
+const float kStereoWidth[] = { 0.0f, 0.3f, 0.8f };
+const char* const kKeys[kSetCount] = { "filter", "music", "stereo", "noflicker", "hd",
+	"fade", "fullscreen", "vsync" };
+
+PlatSetting sSettings[kSetCount] = {
+	{ "Picture:", kFilterChoices, 3, 0, true },
+	{ "Music:", kMusicChoices, 3, 0, true },
+	{ "Stereo:", kStereoChoices, 3, 1, true },
+	{ "No sprite flicker", NULL, 0, 1, true },
+	{ "HD room tiles", NULL, 0, 1, true },
+	{ "Smooth room changes", NULL, 0, 1, true },
+	{ "Full screen", NULL, 0, 0, true },
+	{ "Wait for the screen refresh", NULL, 0, 1, true }
+};
+int sSavedMusic = -1;	// the player's choice (an SCC ROM starts with SCC)
+int sWindowPlace[4] = { 0, 0, 0, 0 };
+
+const char* const kHelp =
+	"Keys: arrows move, space fires, M or N second button,\n"
+	"F1-F5 and Return as on the MSX.\n"
+	"F6 settings, F7 picture, F8 timing, F9 screenshot,\n"
+	"F10 music, F11 full screen, F12 quit.\n"
+	"Drop a ROM file on the game window to play it.";
+
+std::string
+SettingsPath()
+{
+	return std::string(PlatSettingsDir()) + "/MetalGear.settings";
+}
+
+void
+LoadSettings()
+{
+	FILE* fp = fopen(SettingsPath().c_str(), "r");
+	if (fp == NULL)
+		return;
+	char line[128], key[32], word[32];
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		int x, y, w, h;
+		if (sscanf(line, "window %d %d %d %d", &x, &y, &w, &h) == 4) {
+			sWindowPlace[0] = x;
+			sWindowPlace[1] = y;
+			sWindowPlace[2] = w;
+			sWindowPlace[3] = h;
+			continue;
+		}
+		if (sscanf(line, "%31s %31s", key, word) != 2)
+			continue;
+		for (int i = 0; i < kSetCount; i++) {
+			if (strcmp(key, kKeys[i]) != 0)
+				continue;
+			int value = atoi(word);
+			if (i == kSetFilter || i == kSetMusic) {
+				const char* const* names = i == kSetFilter ? kFilterNames : kMusicNames;
+				for (int c = 0; c < 3; c++) {
+					if (strcmp(word, names[c]) == 0)
+						value = c;
+				}
+				if (i == kSetMusic)
+					sSavedMusic = value;
+			}
+			if (value >= 0 && value < (sSettings[i].choices != NULL ? sSettings[i].count : 2))
+				sSettings[i].value = value;
+		}
+	}
+	fclose(fp);
+}
+
+void
+SaveSettings()
+{
+	FILE* fp = fopen(SettingsPath().c_str(), "w");
+	if (fp == NULL)
+		return;
+	fprintf(fp, "# Metal Gear settings (F6 shows the settings window)\n");
+	for (int i = 0; i < kSetCount; i++) {
+		if (i == kSetFilter)
+			fprintf(fp, "%s %s\n", kKeys[i], kFilterNames[sSettings[i].value]);
+		else if (i == kSetMusic) {
+			if (sSavedMusic >= 0)
+				fprintf(fp, "%s %s\n", kKeys[i], kMusicNames[sSavedMusic]);
+		} else
+			fprintf(fp, "%s %d\n", kKeys[i], sSettings[i].value);
+	}
+	int x, y, w, h;
+	if (PlatGetWindow(&x, &y, &w, &h))
+		fprintf(fp, "window %d %d %d %d\n", x, y, w, h);
+	fclose(fp);
+}
+
 }	// namespace
 
 
@@ -260,36 +435,90 @@ GameMain(int argc, char** argv)
 	std::string message;
 	if (!LoadRom(argc, argv, &message)) {
 		fprintf(stderr, "%s\n", message.c_str());
-		PlatAlert("Metal Gear", message.c_str());
-		return 1;
+		if (!ChooseRom(message))
+			return 1;
 	}
 	const RomInfo& info = LoadedRomInfo();
 	printf("Metal Gear: %s ROM, SHA1 %s\n", RomVersionName(info.version), info.sha1);
 	if (!info.note.empty())
 		printf("  %s\n", info.note.c_str());
 
+	LoadSettings();
+	if (sWindowPlace[2] > 0)
+		PlatSetSavedWindow(sWindowPlace[0], sWindowPlace[1], sWindowPlace[2], sWindowPlace[3]);
 	if (!PlatInit(kScreenWidth, kScreenHeight, false, "Metal Gear"))
 		return 1;
 
 	static GameAudio audio;
 	audio.SetRate(44100);
 	std::string soundfont = FindSoundfont();
+	bool haveSoundfont = false;
 	if (!soundfont.empty() && audio.LoadSoundFont(soundfont.c_str())) {
+		haveSoundfont = true;
 		std::string config = std::string(PlatSettingsDir()) + "/music.cfg";
 		if (!audio.Music().LoadConfig(config.c_str())) {
 			// none yet, or set for another SoundFont: keep that one aside
 			rename(config.c_str(), (config + ".old").c_str());
 			audio.Music().SaveConfig(config.c_str());
 		}
-		audio.SetMode(GameAudio::kEnhanced);
 		printf("  music: %s\n", soundfont.c_str());
-	} else {
-		audio.SetMode(GameAudio::kClassic);
+	} else
 		printf("  music: classic (no SoundFont found)\n");
+	FindHdTiles();
+	if (HdTileCount() == 0) {
+		sSettings[kSetHd].label = "HD room tiles (none found)";
+		sSettings[kSetHd].enabled = false;
 	}
-	// The SCC versions: their own sound first (F10 switches).
+
+	// Puts a setting into effect.
+	auto apply = [&](int setting) {
+		int value = sSettings[setting].value;
+		switch (setting) {
+			case kSetFilter:
+				PlatSetScaler(kFilterNames[value]);
+				break;
+			case kSetMusic:
+				if (value == 0 && !haveSoundfont) {
+					value = 1;
+					sSettings[setting].value = 1;
+				}
+				audio.SetMode(value == 0 ? GameAudio::kEnhanced
+					: value == 1 ? GameAudio::kClassic : GameAudio::kScc);
+				break;
+			case kSetStereo:
+				audio.SetStereoWidth(kStereoWidth[value]);
+				break;
+			case kSetNoFlicker:
+				gOptions.noFlicker = value != 0;
+				break;
+			case kSetHd:
+				gOptions.hdTiles = value != 0 && HdTileCount() > 0;
+				break;
+			case kSetFullscreen:
+				PlatSetFullscreen(value != 0);
+				break;
+			case kSetVsync:
+				PlatSetVsync(value != 0);
+				break;
+		}
+	};
+	// Music: the saved choice, else enhanced when there is a SoundFont; the
+	// SCC versions start with their own sound.
+	sSettings[kSetMusic].value = sSavedMusic >= 0 ? sSavedMusic : (haveSoundfont ? 0 : 1);
 	if (info.scc)
-		audio.SetMode(GameAudio::kScc);
+		sSettings[kSetMusic].value = 2;
+	for (int i = 0; i < kSetCount; i++)
+		apply(i);
+	// A change by key or in the window: into effect, shown, saved.
+	auto change = [&](int setting, int value) {
+		sSettings[setting].value = value;
+		apply(setting);
+		if (setting == kSetMusic)
+			sSavedMusic = sSettings[setting].value;
+		PlatUpdateSetting(setting, sSettings[setting].value);
+		SaveSettings();
+	};
+
 	bool audioOpen = PlatAudioOpen(44100, AudioCallback, NULL);
 
 	// The cassette for saving and loading: a .CAS image, also usable in
@@ -301,6 +530,10 @@ GameMain(int argc, char** argv)
 	Start();
 
 	static uint8_t picture[kScreenWidth * kScreenHeight];
+	static uint8_t spriteMask[kScreenWidth * kScreenHeight];
+	static const uint32_t* hdTiles[kScreenWidth * kScreenHeight];
+	static uint8_t hdLocal[kScreenWidth * kScreenHeight];
+	int lastRoom = -1;
 	std::vector<int16_t> samples;
 	const double tickMs = 1000.0 / GameAudio::kTickRate;
 	double next = PlatTicksMs();
@@ -310,7 +543,33 @@ GameMain(int argc, char** argv)
 		while (PlatPollEvent(&event)) {
 			if (event.type == PLAT_EV_QUIT)
 				quit = true;
-			else if (event.type == PLAT_EV_KEYDOWN) {
+			else if (event.type == PLAT_EV_SETTING) {
+				if (event.setting >= 0 && event.setting < kSetCount)
+					change(event.setting, event.value);
+			} else if (event.type == PLAT_EV_FILE) {
+				// A ROM dropped on the window: play it.
+				char path[1024];
+				std::string error;
+				if (!PlatDroppedFile(path, sizeof(path)))
+					continue;
+				if (LoadGameRom(path, &error)) {
+					KeepRom(path);
+					Start();
+					lastRoom = -1;
+					if (LoadedRomInfo().scc)
+						sSettings[kSetMusic].value = 2;
+					else
+						sSettings[kSetMusic].value = sSavedMusic >= 0 ? sSavedMusic
+							: (haveSoundfont ? 0 : 1);
+					apply(kSetMusic);
+					PlatUpdateSetting(kSetMusic, sSettings[kSetMusic].value);
+					std::string text = std::string("ROM: ")
+						+ RomVersionName(LoadedRomInfo().version)
+						+ (LoadedRomInfo().exact ? "" : " (modified)");
+					PlatShowMessage(text.c_str());
+				} else
+					PlatShowMessage(("Not a Metal Gear ROM: " + error).c_str());
+			} else if (event.type == PLAT_EV_KEYDOWN) {
 				if (event.key > 0 && event.key < MOGK_LAST)
 					sTapped[event.key] = true;
 				if (event.key == MOGK_BACKSPACE || event.key == MOGK_RETURN
@@ -322,8 +581,11 @@ GameMain(int argc, char** argv)
 					continue;
 				}
 				switch (event.key) {
+					case MOGK_F6:
+						PlatShowSettings(sSettings, kSetCount, kHelp);
+						break;
 					case MOGK_F7:
-						PlatNextScaler();
+						change(kSetFilter, (sSettings[kSetFilter].value + 1) % 3);
 						break;
 					case MOGK_F8:
 						PlatToggleStats();
@@ -335,18 +597,14 @@ GameMain(int argc, char** argv)
 					case MOGK_F10:
 					{
 						// enhanced (with a SoundFont), original, original + SCC
-						GameAudio::Mode mode = audio.GetMode();
-						if (mode == GameAudio::kEnhanced)
-							mode = GameAudio::kClassic;
-						else if (mode == GameAudio::kClassic)
-							mode = GameAudio::kScc;
-						else
-							mode = audio.Music().Ready() ? GameAudio::kEnhanced : GameAudio::kClassic;
-						audio.SetMode(mode);
-					}
+						int music = (sSettings[kSetMusic].value + 1) % 3;
+						if (music == 0 && !haveSoundfont)
+							music = 1;
+						change(kSetMusic, music);
 						break;
+					}
 					case MOGK_F11:
-						PlatSetFullscreen(!PlatIsFullscreen());
+						change(kSetFullscreen, PlatIsFullscreen() ? 0 : 1);
 						break;
 					case MOGK_F12:
 						quit = true;
@@ -378,7 +636,20 @@ GameMain(int argc, char** argv)
 		audio.Tick(samples, false);
 		AudioPush(samples);
 
-		RenderScreenIndexed(gScreen, picture);
+		// Into another room while playing: fade over (picture only).
+		if (Ram(var::GameStatus) == 5) {
+			int room = Ram(var::Room);
+			if (lastRoom >= 0 && room != lastRoom && sSettings[kSetFade].value != 0)
+				PlatStartTransition(220);
+			lastRoom = room;
+		} else
+			lastRoom = -1;
+
+		RenderScreenIndexed(gScreen, picture, spriteMask);
+		if (gOptions.hdTiles && HdBuildOverlay(gScreen, spriteMask, hdTiles, hdLocal))
+			PlatSetHdOverlay(hdTiles, hdLocal);
+		else
+			PlatSetHdOverlay(NULL, NULL);
 		uint8_t palette[768];
 		memset(palette, 0, sizeof(palette));
 		for (int i = 0; i < 16; i++) {
@@ -409,6 +680,7 @@ GameMain(int argc, char** argv)
 				next = now;	// fell behind: do not try to catch up
 		}
 	}
+	SaveSettings();
 	PlatAudioClose();
 	PlatShutdown();
 	return 0;
