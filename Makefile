@@ -16,7 +16,7 @@ PLATFORM = src/platform/PlatformHaiku.cpp src/platform/PlatformCommon.cpp \
 REF = src/msx/Machine.cpp src/msx/Psg.cpp src/msx/Vdp.cpp src/z80/Z80.cpp
 
 MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp src/MetalGear.rdef
-	$(CXX) $(CXXFLAGS) -o $@ $(filter %.cpp,$^) -lbe -lmedia -ltranslation -ldevice
+	$(CXX) $(CXXFLAGS) -o $@ $(filter %.cpp,$^) -lbe -lmedia -ltranslation -ldevice -ltracker
 	rc -o MetalGear.rsrc src/MetalGear.rdef
 	xres -o $@ MetalGear.rsrc
 	mimeset -f $@
