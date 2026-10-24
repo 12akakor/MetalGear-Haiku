@@ -132,11 +132,17 @@ changes how the game plays.
 
 The game shows a room tile in HD when `hd/tiles/<key>.png` exists for it
 (in the settings folder or next to the program); everything else keeps the
-filtered picture. Make the automatic set from your own ROM (needs python3
-with numpy, scipy and Pillow; it can also run on another computer, then
-copy the `hd` folder):
+filtered picture. Make the automatic set from your own ROM:
 
-    tools/hd/make_hd.sh MetalGear.rom
+    tools/hd/make_hd.sh
+
+On Haiku this takes the ROM from the settings folder and puts the tiles in
+`~/config/settings/MetalGear/hd`; restart the game to see them. It checks
+first what it needs (make, g++, python 3 with numpy, scipy and Pillow) and
+says how to install what is missing (on Haiku `pkgman install python3.10
+numpy_python310 scipy_python310 pillow_python310`). A ROM and a folder can
+be given: `tools/hd/make_hd.sh <rom> [hd folder]`; on another system the
+tiles go to `./hd`, to be copied to Haiku.
 
 Own drawings go in `hd/tiles` too and take priority; see
 `docs/02-hd-tekenen.md` (Dutch) and `mg-hdtool`. Tiles are shown while the
