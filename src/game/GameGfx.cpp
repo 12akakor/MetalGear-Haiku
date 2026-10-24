@@ -10,6 +10,7 @@
 
 #include "Common.h"
 #include "GfxBasic.h"
+#include "HdTiles.h"
 #include "RoomGfx.h"
 #include "Rom.h"
 #include "Screen.h"
@@ -261,6 +262,7 @@ SetSprPal()
 	SetBanks_4_5_6();
 	SetPalette(GetPointerDE2A(SYM(idxSprSetPals), set));
 	SetBanks1_2_3();
+	HdRoomPaletteDone(gScreen);	// for the HD tiles
 }
 
 

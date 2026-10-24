@@ -28,6 +28,9 @@ int		HdTileCount();
 
 // Called by SetRoomPal2: the room palette now in use.
 void	HdSetRoomPalette(uint8_t palette, const Screen& screen);
+// Called by SetSprPal, which sets some colours of the room (after
+// SetRoomPal): the colours as the room shows them.
+void	HdRoomPaletteDone(const Screen& screen);
 
 // For the frame just rendered: per pixel the HD tile (32x32, 0xffRRGGBB)
 // that covers it, or NULL, and its place in the 8x8 cell (x | y << 3).

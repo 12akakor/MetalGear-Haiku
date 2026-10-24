@@ -152,6 +152,13 @@ void
 HdSetRoomPalette(uint8_t palette, const Screen& screen)
 {
 	sPalette = palette;
+	HdRoomPaletteDone(screen);
+}
+
+
+void
+HdRoomPaletteDone(const Screen& screen)
+{
 	for (int i = 0; i < 16; i++) {
 		sPaletteRB[i] = screen.PaletteRB(i);
 		sPaletteG[i] = screen.PaletteG(i);
@@ -165,13 +172,16 @@ HdBuildOverlay(const Screen& screen, const uint8_t* sprites, const uint32_t** ti
 {
 	if (!gOptions.hdTiles || sCount == 0 || sPalette < 0)
 		return false;
-	// The HD tiles are painted for the room palette: while it is changed
-	// (fading, flashing, the dark without flashlight) the normal picture
-	// is shown.
+	// The HD tiles are painted for the room palette: a cell that uses a
+	// colour that is changed now (fading, a flash, the dark without
+	// flashlight) shows the normal picture.
+	unsigned changed = 0;
 	for (int i = 0; i < 16; i++) {
 		if (screen.PaletteRB(i) != sPaletteRB[i] || screen.PaletteG(i) != sPaletteG[i])
-			return false;
+			changed |= 1u << i;
 	}
+	if (changed == 0xffff)
+		return false;
 	if ((screen.Register(1) & 0x40) == 0)
 		return false;
 	int lines = ((screen.Register(9) & 0x80) != 0) ? 212 : 192;
@@ -194,14 +204,18 @@ HdBuildOverlay(const Screen& screen, const uint8_t* sprites, const uint32_t** ti
 				looked[c] = true;
 				cell[c] = NULL;
 				uint8_t indices[64];
+				unsigned used = 0;
 				for (int y = 0; y < 8; y++) {
 					const uint8_t* row = screen.fVram + page + ((cy * 8 + y) & 0xff) * 128
 						+ cx * 4;
 					for (int x = 0; x < 4; x++) {
 						indices[y * 8 + x * 2] = static_cast<uint8_t>(row[x] >> 4);
 						indices[y * 8 + x * 2 + 1] = static_cast<uint8_t>(row[x] & 0x0f);
+						used |= (1u << (row[x] >> 4)) | (1u << (row[x] & 0x0f));
 					}
 				}
+				if ((used & changed) != 0)
+					continue;
 				auto it = sTiles.find(CellHash(indices));
 				if (it != sTiles.end()) {
 					for (const HdTile& t : it->second) {
