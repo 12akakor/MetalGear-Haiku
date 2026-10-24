@@ -283,7 +283,7 @@ Vdp::_FinishCommand()
 
 // Durations in VDP cycles (21.48 MHz; 6 per CPU cycle) per step and per
 // line, for: sprites on, sprites off, display off. Values from the timing
-// tables of openMSX (VDPCmdEngine); see docs/01-voortgang.md for the
+// tables of openMSX (VDPCmdEngine); see docs/01-progress.md for the
 // comparison with openMSX.
 void
 Vdp::_AddDuration(int cmd, long steps, long lines)

@@ -93,7 +93,7 @@ moment (a pulsing lamp, a flash, a fade, the dark) keep the original.
 `tools/hd/make_hd.sh` makes the automatic set (`gfx_export` reads the rooms
 from the ROM, `tools/hd/hd_auto.py` paints the tiles, `xbr_png` enlarges).
 Own drawings go in `hd/tiles` too and take priority; see
-[02-hd-tekenen.md](02-hd-tekenen.md) (Dutch) and `mg-hdtool`.
+[02-drawing-hd-tiles.md](02-drawing-hd-tiles.md) and `mg-hdtool`.
 
 ## Saved games
 
