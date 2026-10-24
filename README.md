@@ -100,7 +100,11 @@ uses:
         -drumkeys 36,38,40,41,42,45,48,49,50
 
 Keys: arrows, space (fire), M or N (second button), F1-F5 and Return as on
-the MSX. Port keys (as in the Maze of Galious port where the game allows;
+the MSX. Saving and loading as in the original: F1 pauses, then F5 saves or
+F4 loads (type a name, Return; after saving answer Y to verify and N to
+"retry?", then F1 plays on). The saves are in
+`~/config/settings/MetalGear/MetalGear.cas`, a tape image that MSX
+emulators can use too. Port keys (as in the Maze of Galious port where the game allows;
 Metal Gear uses F1-F5 itself):
 
 | Key | Function |

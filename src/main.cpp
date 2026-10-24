@@ -355,7 +355,7 @@ int sWindowPlace[4] = { 0, 0, 0, 0 };
 
 const char* const kHelp =
 	"Keys: arrows move, space fires, M or N second button,\n"
-	"F1-F5 and Return as on the MSX.\n"
+	"F1-F5 and Return as on the MSX: F1 pause, then F5 save or F4 load.\n"
 	"F6 settings, F7 picture, F8 timing, F9 screenshot,\n"
 	"F10 music, F11 full screen, F12 quit.\n"
 	"Drop a ROM file on the game window to play it.";
