@@ -1,234 +1,117 @@
-# Metal Gear for Haiku and RenkuOS (work in progress)
+# Metal Gear for Haiku
 
-A native C++ port of **Metal Gear** (Konami, MSX2, 1987) for Haiku and
-RenkuOS on x86_64, with optional enhanced music and graphics.
+**Metal Gear** (Konami, MSX2, 1987) as a native Haiku game. The original
+program is rewritten in C++, so it plays exactly like the MSX version, and
+it adds sharper graphics, better music and a few comforts the MSX could not
+offer. No emulator is involved.
 
-**No game data is included.** This repository contains only the engine and
-tools. The game itself is read at run time from a ROM you provide: build it
-yourself from the annotated disassembly by Manuel Pazos
-([GuillianSeed/MetalGear](https://github.com/GuillianSeed/MetalGear)), or use
-a dump of a cartridge you own.
+![The first room in HD: tanks and crates](docs/screenshots/hd-start.png)
 
-Supported: the English version (CRC32 `E85C5731`, SHA1 `b656bd19...`) and the
-Japanese version (CRC32 `FAFE1303`, SHA1 `a52021f1...`), the same dumps as in
-the openMSX software database. Overdumps (128 KB repeated) are accepted, and
-modified versions are accepted with a note when at least 80 percent of their
-256 byte blocks equal one of the two (unrelated ROMs score near 0, the two
-versions 67 percent with each other). Texts, fonts and graphics then come
-from that ROM; code changes of a hack are not followed. Tested with the
-differential test, 0 differences each:
+![Trucks on the field in HD](docs/screenshots/hd-trucks.png)
 
-| ROM | Base | Remark |
-|---|---|---|
-| Official English Translation (= English) | English | |
-| French translation by Django, French 6393, French 6874 | Japanese | |
-| Russian translation by Andrew Shtein | Japanese | |
-| Remix 1.995 | Japanese | its moved dictionary is found in the code |
-| Remix 1.995 SCC Version, TFH SCC version (136 KB) | Japanese / English | SCC sound on, see below |
-| 1.995 Remix + Nekura Hoka + Improvements v1.0 (160 KB) | Japanese | the speed improvements in the extra banks are not needed and not used |
+*With the HD room tiles made from your own ROM.*
 
-The SCC versions (patch by Fony, 2018) need a Konami SCC cartridge: bank 0
-is a new start bank with the SCC code and the original bank 0 is moved to
-the end; every write to the PSG also goes to the SCC, which plays the same
-notes as a sawtooth. The port recognises them, uses the original bank 0 and
-plays that SCC layer itself (F10 switches it on for any ROM).
+## What is different from the original
 
-Check a ROM with `mg-romcheck`: it prints only checksums, so its output can
-be shared.
+The game itself is unchanged: the same rooms, enemies, items, radio calls,
+passwords and ending, tick for tick as on the MSX. What changed is how it
+looks, sounds and is handled:
 
-    g++ -O2 -std=c++17 -o mg-romcheck tools/romcheck.cpp src/game/GameData.cpp src/game/RomSymbols.cpp
-    ./mg-romcheck MetalGear.rom
+- **HD room tiles.** Every room can be shown with detailed tiles: tanks in
+  army green, wooden crates, sharper walls and floors. They are made once
+  from your own ROM with one command; you can also draw your own.
+- **Smooth picture at any size.** The game fills the window or the whole
+  screen, with a smoothing filter (or sharp pixels if you prefer).
+- **No sprite flicker.** The MSX could show only 8 sprites on a line and
+  made the rest flicker. Here every enemy and bullet stays visible.
+- **Enhanced music.** The original music played on real instruments
+  (GeneralUser GS SoundFont) with reverb. The original sound is one key
+  away, also with the extra SCC voices of the SCC versions of the game.
+- **Stereo** for the original sound, and **smooth room changes** with a
+  short fade.
+- **60 frames per second**, as the MSX2 at 60 Hz, without the slowdown of
+  the original when much happens at once.
+- **Settings window** (F6) for all of this, remembered between runs.
+- **Saving** works as in the original, to a tape image on disk that MSX
+  emulators can read as well.
+- **Translations and variants**: the English and Japanese versions and the
+  French, Russian and Remix fan versions all run, including the SCC
+  versions.
 
-Metal Gear is a trademark of Konami. This project is not affiliated with or
-endorsed by Konami.
+## Getting the game running
 
-## How it works
+The game ROM is not included. Use a dump of a cartridge you own, or build it
+from the annotated disassembly by Manuel Pazos
+([GuillianSeed/MetalGear](https://github.com/GuillianSeed/MetalGear)).
 
-The original program is rewritten routine by routine in C++. Every rewritten
-routine is checked against the original code with a differential test: a Z80
-reference machine (used only for testing, it is not part of the game) runs the
-original routine on the same state, and the variables and output must match
-bit for bit.
-
-- **Music:** the original sound driver, rewritten in C++ (bit exact). The notes
-  can be played on General MIDI SoundFont instruments with reverb
-  ("enhanced"), or with the original square wave sound ("classic"), with or
-  without the SCC layer of the SCC versions.
-- **Graphics:** HD tiles are generated from the ROM on your own computer
-  (crisp surfaces, smooth object contours, realistic colours for known objects,
-  original brightness kept). Your own drawings in `hd/tiles` take priority.
-
-## Status
-
-| Part | State |
-|---|---|
-| Z80 reference machine for tests (zexdoc/zexall pass) | done |
-| Sound driver in C++, bit exact | done |
-| SoundFont music and classic sound | done (preview tool) |
-| Graphics export and HD tile generator | done (tools) |
-| Start up, Konami logo, Metal Gear logo, menu | done, tick for tick equal |
-| Save and load (tape, .CAS images) | done, tick for tick equal; reachable once the pause screen is rewritten |
-| Demo and game logic in native C++ | in progress |
-| Haiku window, input, sound output | first version (from the Maze of Galious port) |
-
-## Building and running on Haiku
-
-Tested on Haiku R1/beta6 x86_64 (hrev59866+92), in VirtualBox.
-
-    make
-    ./MetalGear
-
-Without a ROM the game asks for one (a file panel) and keeps a copy as
-`~/config/settings/MetalGear/MetalGear.rom`. A ROM dropped on the game
-window (or on the program's icon) is played at once and kept the same way.
-
-The enhanced music uses `data/MetalGear-GeneralUser.sf2` (7 MB, included):
-the instruments and drums of GeneralUser GS 2.0.3 by S. Christian Collins
-that the game uses (licence in `data/LICENSE.GeneralUser.txt`: free to use,
-also in software). The instruments and levels per music are in `music.cfg`
-in the settings folder (written on first run, for this SoundFont; a
-`music.cfg` made for another one is kept as `music.cfg.old` and replaced).
-To choose other instruments, put the complete GeneralUser GS (or any General
-MIDI SoundFont) in the settings folder; it is then used instead. Without any
-SoundFont the original sound plays.
-
-Make a subset of another SoundFont with the instruments and drums the game
-uses:
-
-    tools/sf2/sf2_subset.py GeneralUser-GS.sf2 out.sf2 \
-        0:29,0:30,0:33,0:36,0:38,0:48,0:50,0:56,0:61,0:62,0:80,0:81,128:0 \
-        -drumkeys 36,38,40,41,42,45,48,49,50
-
-Keys: arrows, space (fire), M or N (second button), F1-F5 and Return as on
-the MSX. Saving and loading as in the original: F1 pauses, then F5 saves or
-F4 loads (type a name, Return; after saving answer Y to verify and N to
-"retry?", then F1 plays on). The saves are in
-`~/config/settings/MetalGear/MetalGear.cas`, a tape image that MSX
-emulators can use too. Port keys (as in the Maze of Galious port where the game allows;
-Metal Gear uses F1-F5 itself):
-
-| Key | Function |
-|---|---|
-| F6 | Settings window |
-| F7 | Next picture filter (xBR, sharp, nearest) |
-| F8 | Show or hide the timing display |
-| F9 or Print Screen | Screenshot (PNG in the home folder) |
-| F10 | Music: enhanced, original sound, original sound with SCC |
-| F11 | Full screen on or off |
-| F12 or Alt+Q | Quit |
-
-### Haiku package
+Build and install the package, then start Metal Gear from the Deskbar menu
+(Applications). On the first start it asks for the ROM and keeps a copy; you
+can also drop a ROM file on the game window at any time.
 
     make package
     pkgman install ./metalgear-1.0.0-1-x86_64.hpkg
 
-This builds `metalgear-<version>-1-<arch>.hpkg` with the game, its
-SoundFont and the HD tile tools in `/boot/system/apps/MetalGear`, and puts
-"Metal Gear" in the Deskbar menu (Applications). The version is `VERSION`
-in the Makefile (also set it in `src/MetalGear.rdef`). With the package
-installed, make the HD tiles without the source code:
+To build and run without installing:
 
-    /boot/system/apps/MetalGear/tools/make_hd.sh
+    make
+    ./MetalGear
 
-### Settings (F6)
-
-Kept in `~/config/settings/MetalGear/MetalGear.settings`. None of them
-changes how the game plays.
-
-| Setting | |
-|---|---|
-| Picture | smooth (xBR), sharp pixels, or pixels in whole steps |
-| Music | enhanced (SoundFont), original, original with SCC |
-| Stereo | the three voices of the original sound: mono, a little, wide |
-| No sprite flicker | all sprites on every line in a fixed order (the MSX shows 8 per line and rotates them); the HUD rows keep the limit the elevators use |
-| HD room tiles | room tiles from `hd/tiles` (see below) |
-| Smooth room changes | a short cross-fade into the next room |
-| Full screen, wait for the screen refresh | |
+Made for Haiku R1/beta6 (x86_64), tested on hrev59866+92.
 
 ### HD room tiles
 
-The game shows a room tile in HD when `hd/tiles/<key>.png` exists for it
-(in the settings folder or next to the program); everything else keeps the
-filtered picture. Make the automatic set from your own ROM:
+Make them once from your ROM (it says what to install if something is
+missing, and puts the tiles where the game finds them):
 
-    tools/hd/make_hd.sh
+    /boot/system/apps/MetalGear/tools/make_hd.sh    # with the package
+    tools/hd/make_hd.sh                              # from the source
 
-On Haiku this takes the ROM from the settings folder and puts the tiles in
-`~/config/settings/MetalGear/hd`; restart the game to see them. It checks
-first what it needs (make, g++, python 3 with numpy, scipy and Pillow) and
-says how to install what is missing (on Haiku `pkgman install python3.10
-numpy_python310 scipy_python310 pillow_python310`). A ROM and a folder can
-be given: `tools/hd/make_hd.sh <rom> [hd folder]`; on another system the
-tiles go to `./hd`, to be copied to Haiku.
+Start the game again to see them; F6 switches them on or off.
 
-Own drawings go in `hd/tiles` too and take priority; see
-`docs/02-hd-tekenen.md` (Dutch) and `mg-hdtool`. Tiles are shown while the
-room has its normal palette (not during fades or in the dark).
+## Playing
 
-## Building the ROM (needed for everything)
+| Key | |
+|---|---|
+| Arrows | move |
+| Space | fire, use |
+| M or N | second button (also skips radio texts) |
+| F1 | pause |
+| F2 | weapons |
+| F3 | equipment |
+| F4 | radio |
+| Return | confirm a name |
 
-    git clone https://github.com/GuillianSeed/MetalGear
-    cd MetalGear
-    sjasm MetalGear.asm MetalGear.rom      # Sjasm 0.39
+**Saving and loading** work as in the original: press **F1** to pause, then
+**F5** to save or **F4** to load. Type a name and press Return. After saving
+answer **Y** to check the save and **N** to the question "retry?", then press
+F1 to play on. After game over, F5 continues.
 
-## Icon
+Keys of this version:
 
-`data/icon` holds the application icon, an original design (an olive drab
-gear with a radar screen): `MetalGear.hvif` (Haiku vector icon, also in
-`src/MetalGear.rdef`, attached by `make`) and PNG versions from 16 to 512
-pixels. `tools/icon/make_icon.py data/icon src/MetalGear.rdef` rebuilds
-them; the PNGs are drawn from the HVIF data the way Haiku draws icons.
+| Key | |
+|---|---|
+| F6 | settings |
+| F7 | picture: smooth, sharp or whole pixels |
+| F8 | timing display |
+| F9 or Print Screen | screenshot (in your home folder) |
+| F10 | music: enhanced, original, original with SCC |
+| F11 | full screen |
+| F12 or Alt+Q | quit |
 
-## Saved games
+Your ROM, settings, saves and HD tiles are kept in
+`~/config/settings/MetalGear`.
 
-The original saves to cassette. The port writes the same bytes to a tape
-image, `~/config/settings/MetalGear/MetalGear.cas`, in the .CAS format
-that MSX emulators (openMSX, blueMSX, fMSX) use. Saves are
-interchangeable: put a .CAS with Metal Gear saves from an emulator there
-under that name to load them in the port, or insert the port's file as a
-tape in an emulator and load it with F4 in the original. Each save holds
-its name (up to 6 letters or digits) and the game progress (#300 bytes).
-Saving under a name that is already on the tape replaces that save; `mg-tape
-file.cas` lists the saves on a tape.
+## More
 
-Disk saves made with third party disk patches are not supported (their
-format is unknown here); a sample file would be needed.
+Technical notes, supported ROM versions in detail, the tests and tools:
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-## Tools
+The source code is under the MIT licence (`LICENSE`). The included
+instruments are from GeneralUser GS by S. Christian Collins
+(`data/LICENSE.GeneralUser.txt`).
 
-    # music previews, original and enhanced (any General MIDI SoundFont)
-    make music_preview
-    ./music_preview MetalGear.rom data/MetalGear-GeneralUser.sf2 out 60
-
-    # graphics export, HD tool
-    g++ -O2 -std=c++17 -o gfx_export tools/gfx_export.cpp src/game/*.cpp src/msx/*.cpp src/z80/*.cpp
-    ./gfx_export MetalGear.rom export
-    g++ -O2 -std=c++17 -o mg-hdtool tools/hdtool.cpp
-
-    # sound driver test against the original
-    make tools          # tests and tools: sound_diff, room_diff, game_diff, mgnative, ...
-    ./sound_diff MetalGear.rom
-    ./game_diff MetalGear.rom 700
-    ./save_diff MetalGear.rom
-
-## Coding style
-
-The code follows the [Haiku coding guidelines](https://www.haiku-os.org/development/coding-guidelines)
-with these deliberate exceptions:
-
-- The game core (`src/game`, `src/audio`) does not depend on Haiku, so the
-  tests and tools also build on other systems. It uses the `stdint.h` types
-  (`uint8_t`) instead of the SupportDefs.h types (`uint8`).
-- Routines rewritten from the disassembly keep the names of the
-  disassembly (`VDP_Copy_Byte`, `LoadRoomTiles`, `SNSMAT`), so every one
-  can be found in the original and checked against it.
-- The sound driver (`src/game/SoundDriver.cpp`) keeps the jump structure of
-  the original routine with `goto`, so it can be compared with
-  `bgmdriver.asm` line by line.
-- `src/msx` and `src/z80` are the reference machine for the tests only;
-  they are not part of the game.
-
-`tools/check/haiku_syntax.sh` checks the Haiku specific code against the
-real Haiku headers on another system.
+Metal Gear is a trademark of Konami. This project is not affiliated with or
+endorsed by Konami, and contains no game data: the ROM and the graphics and
+music made from it stay on your own computer.
 
 Port by Akakor, developed with the help of Claude (Anthropic).
