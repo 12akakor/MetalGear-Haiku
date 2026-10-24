@@ -1219,12 +1219,19 @@ public:
 			B_NOT_RESIZABLE | B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS
 				| B_ASYNCHRONOUS_CONTROLS | B_CLOSE_ON_ESCAPE)
 	{
-		BGridLayout* grid = new BGridLayout(B_USE_DEFAULT_SPACING, B_USE_SMALL_SPACING);
+		// The grid goes into the window first: views added to a layout
+		// that has no view yet are never shown.
+		BLayoutBuilder::Group<> builder(this, B_VERTICAL, B_USE_DEFAULT_SPACING);
+		builder.SetInsets(B_USE_WINDOW_SPACING);
+		BGridLayout* grid = NULL;
+		builder.AddGrid(B_USE_DEFAULT_SPACING, B_USE_SMALL_SPACING)
+			.GetLayout(&grid)
+		.End();
 		for (int i = 0; i < count; i++) {
 			const PlatSetting& setting = settings[i];
-			BMessage* message = new BMessage(kMsgSetting);
-			message->AddInt32("setting", i);
 			if (setting.choices == NULL) {
+				BMessage* message = new BMessage(kMsgSetting);
+				message->AddInt32("setting", i);
 				BCheckBox* box = new BCheckBox(setting.label, message);
 				box->SetValue(setting.value != 0 ? B_CONTROL_ON : B_CONTROL_OFF);
 				box->SetEnabled(setting.enabled);
@@ -1232,7 +1239,6 @@ public:
 				fControls.push_back(box);
 				fMenus.push_back(NULL);
 			} else {
-				delete message;
 				BPopUpMenu* menu = new BPopUpMenu("choice");
 				for (int c = 0; c < setting.count; c++) {
 					BMessage* choice = new BMessage(kMsgSetting);
@@ -1251,8 +1257,6 @@ public:
 			}
 		}
 
-		BLayoutBuilder::Group<> builder(this, B_VERTICAL, B_USE_DEFAULT_SPACING);
-		builder.SetInsets(B_USE_WINDOW_SPACING).Add(grid);
 		if (help != NULL && help[0] != '\0') {
 			BString text(help);
 			int32 start = 0;
