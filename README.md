@@ -5,11 +5,9 @@ program is rewritten in C++, so it plays exactly like the MSX version, and
 it adds sharper graphics, better music and a few comforts the MSX could not
 offer. No emulator is involved.
 
-![The first room in HD: tanks and crates](docs/screenshots/hd-start.png)
+![Snake between the crates, two guards on patrol](docs/screenshots/hd-guards.png) ![The fight with the Hind D helicopter](docs/screenshots/hd-hind-d.png)
 
-![Trucks on the field in HD](docs/screenshots/hd-trucks.png)
-
-*With the HD room tiles made from your own ROM.*
+*With the HD room tiles made from your own ROM. Right: the fight with the Hind D.*
 
 ## What is different from the original
 
