@@ -1,0 +1,25 @@
+name			metalgear
+version			@VERSION@-1
+architecture	@ARCH@
+summary			"Metal Gear (MSX2, 1987) as a native Haiku game"
+description		"A native C++ port of Metal Gear (Konami, MSX2, 1987), rewritten routine by routine from the annotated disassembly. Optional enhanced music on a SoundFont, HD room tiles, no sprite flicker and smooth room changes. The game ROM is not included: the game asks for it on the first start."
+
+packager		"Akakor <197073812+12akakor@users.noreply.github.com>"
+vendor			"Akakor"
+copyrights {
+	"2026 Akakor"
+	"GeneralUser GS: S. Christian Collins"
+}
+licenses {
+	"MIT"
+	"GeneralUser GS License v2.0"
+}
+urls			"https://github.com/12akakor/MetalGear-Haiku"
+
+provides {
+	metalgear = @VERSION@
+	app:MetalGear = @VERSION@
+}
+requires {
+	haiku
+}

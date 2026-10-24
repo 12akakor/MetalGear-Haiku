@@ -117,6 +117,19 @@ Metal Gear uses F1-F5 itself):
 | F11 | Full screen on or off |
 | F12 or Alt+Q | Quit |
 
+### Haiku package
+
+    make package
+    pkgman install ./metalgear-1.0.0-1-x86_64.hpkg
+
+This builds `metalgear-<version>-1-<arch>.hpkg` with the game, its
+SoundFont and the HD tile tools in `/boot/system/apps/MetalGear`, and puts
+"Metal Gear" in the Deskbar menu (Applications). The version is `VERSION`
+in the Makefile (also set it in `src/MetalGear.rdef`). With the package
+installed, make the HD tiles without the source code:
+
+    /boot/system/apps/MetalGear/tools/make_hd.sh
+
 ### Settings (F6)
 
 Kept in `~/config/settings/MetalGear/MetalGear.settings`. None of them

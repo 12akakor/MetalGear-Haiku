@@ -7,6 +7,9 @@
 #
 #   tools/hd/make_hd.sh [rom] [hd folder]
 #
+# From the installed package (no source code needed):
+#   /boot/system/apps/MetalGear/tools/make_hd.sh
+#
 # Without a ROM the one in the game's settings folder is used. Without a
 # folder: on Haiku the game's settings folder
 # (~/config/settings/MetalGear/hd), elsewhere ./hd (copy it to the Haiku
@@ -30,7 +33,22 @@ absolute()
 		*) echo "$START/$1" ;;
 	esac
 }
-ROOT=$(cd "$(dirname "$0")/../.." && pwd) || die "cannot find the source folder"
+HERE=$(cd "$(dirname "$0")" && pwd) || die "cannot find my own folder"
+# Installed package: the tools are built already and sit next to this
+# script. Source code: they are built with make.
+if [ -x "$HERE/gfx_export" ] && [ -x "$HERE/xbr_png" ] && [ -f "$HERE/hd_auto.py" ]; then
+	BUILD=no
+	GFX_EXPORT="$HERE/gfx_export"
+	XBR_PNG="$HERE/xbr_png"
+	HD_AUTO="$HERE/hd_auto.py"
+	ROOT=$HOME
+else
+	BUILD=yes
+	ROOT=$(cd "$HERE/../.." && pwd) || die "cannot find the source folder"
+	GFX_EXPORT="$ROOT/gfx_export"
+	XBR_PNG="$ROOT/xbr_png"
+	HD_AUTO="$ROOT/tools/hd/hd_auto.py"
+fi
 cd "$ROOT" || die "cannot enter $ROOT"
 
 HAIKU=no
@@ -78,8 +96,10 @@ OUT=$(cd "$OUT" && pwd)
 # What is needed: a C++ compiler and make, python 3 with numpy, scipy and
 # Pillow.
 MISSING=""
-command -v make >/dev/null 2>&1 || MISSING="$MISSING make"
-command -v g++ >/dev/null 2>&1 || command -v c++ >/dev/null 2>&1 || MISSING="$MISSING g++"
+if [ $BUILD = yes ]; then
+	command -v make >/dev/null 2>&1 || MISSING="$MISSING make"
+	command -v g++ >/dev/null 2>&1 || command -v c++ >/dev/null 2>&1 || MISSING="$MISSING g++"
+fi
 
 PYTHON=""
 BEST=""
@@ -116,18 +136,20 @@ fi
 echo "make_hd: ROM $ROM"
 echo "make_hd: python $PYTHON, tiles into $OUT/tiles"
 
-# The tools, built from this source.
-make gfx_export xbr_png || die "building gfx_export and xbr_png failed"
+# The tools, built from this source (the package has them built).
+if [ $BUILD = yes ]; then
+	make gfx_export xbr_png || die "building gfx_export and xbr_png failed"
+fi
 
 TMP=$(mktemp -d 2>/dev/null || echo "/tmp/make_hd.$$")
 mkdir -p "$TMP" || die "cannot make a temporary folder"
 trap 'rm -rf "$TMP"' EXIT INT TERM
 
-./gfx_export "$ROM" "$TMP/export" || die "reading the rooms from the ROM failed"
+"$GFX_EXPORT" "$ROM" "$TMP/export" || die "reading the rooms from the ROM failed"
 [ -f "$TMP/export/tiles.csv" ] || die "no tiles from the ROM (is it a Metal Gear ROM?)"
 
 BEFORE=$(ls "$OUT/tiles" | grep -c '\.png$')
-$PYTHON tools/hd/hd_auto.py "$TMP/export" "$OUT" "$ROOT/xbr_png" \
+$PYTHON "$HD_AUTO" "$TMP/export" "$OUT" "$XBR_PNG" \
 	|| die "making the HD tiles failed"
 AFTER=$(ls "$OUT/tiles" | grep -c '\.png$')
 [ "$AFTER" -gt 0 ] || die "no HD tiles were written"

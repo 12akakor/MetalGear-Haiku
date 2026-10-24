@@ -1,6 +1,9 @@
 # Metal Gear for Haiku and RenkuOS
 #   make          builds MetalGear (Haiku)
+#   make package  builds metalgear-<version>-1-<arch>.hpkg (Haiku)
 #   make tools    builds the test and helper tools (any POSIX system)
+
+VERSION = 1.0.0
 
 CXX ?= g++
 CXXFLAGS ?= -O2 -std=c++17 -Wall
@@ -20,6 +23,26 @@ MetalGear: $(GAME) $(AUDIO) $(PLATFORM) src/main.cpp src/MetalGear.rdef
 	rc -o MetalGear.rsrc src/MetalGear.rdef
 	xres -o $@ MetalGear.rsrc
 	mimeset -f $@
+
+# The Haiku package: the game, its SoundFont and the HD tile tools in
+# apps/MetalGear, a Deskbar entry, the GeneralUser GS licence.
+PACKAGE_DIR = build/package
+APP_DIR = $(PACKAGE_DIR)/apps/MetalGear
+package: MetalGear gfx_export xbr_png haiku/PackageInfo.in
+	rm -rf $(PACKAGE_DIR)
+	mkdir -p $(APP_DIR)/data $(APP_DIR)/tools \
+		$(PACKAGE_DIR)/data/deskbar/menu/Applications $(PACKAGE_DIR)/data/licenses
+	cp MetalGear README.md LICENSE $(APP_DIR)/
+	cp data/MetalGear-GeneralUser.sf2 data/LICENSE.GeneralUser.txt $(APP_DIR)/data/
+	cp gfx_export xbr_png tools/hd/hd_auto.py tools/hd/make_hd.sh $(APP_DIR)/tools/
+	cp data/LICENSE.GeneralUser.txt "$(PACKAGE_DIR)/data/licenses/GeneralUser GS License v2.0"
+	ln -s ../../../../apps/MetalGear/MetalGear \
+		"$(PACKAGE_DIR)/data/deskbar/menu/Applications/Metal Gear"
+	sed -e "s/@VERSION@/$(VERSION)/" -e "s/@ARCH@/$$(getarch 2>/dev/null || uname -m)/" \
+		haiku/PackageInfo.in > $(PACKAGE_DIR)/.PackageInfo
+	package create -C $(PACKAGE_DIR) \
+		"$(CURDIR)/metalgear-$(VERSION)-1-$$(getarch 2>/dev/null || uname -m).hpkg"
+	@echo "Install with: pkgman install ./metalgear-$(VERSION)-1-*.hpkg"
 
 tools: music_preview gfx_export xbr_png mgnative mg-romcheck mg-hdtool mg-tape sound_diff room_diff game_diff save_diff routine_diff
 
